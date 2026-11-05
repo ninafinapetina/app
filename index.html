@@ -199,7 +199,7 @@ h1 {
 .legend { display: flex; flex-wrap: wrap; gap: 10px 34px; align-items: center; margin: 14px 0 0 60px; font: 700 1.15rem var(--body); color: #1c2650; }
 .legend span { display: inline-flex; align-items: center; gap: 10px; }
 .legend i { display: inline-block; }
-.legend .l-line { width: 64px; height: 5px; border-radius: 3px; background: var(--line); }
+.legend .l-line { width: 64px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--line) 50%, #1f6fe0 50%); }
 .legend .l-bar { width: 44px; height: 26px; border-radius: 4px; background: linear-gradient(#6fd2ff, var(--rain)); }
 .legend .model { margin-left: auto; font: 800 0.8rem var(--body); color: var(--ink-soft); }
 .legend .hint { color: var(--accent); font-size: 0.98rem; }
@@ -698,9 +698,16 @@ function renderChart() {
   const x = i => m.l + i / (n - 1) * pw;
   const temps = hrs.map(h => h.temp);
   const lo = Math.min(...temps), hi = Math.max(...temps);
-  let step = 5, tMin = Math.floor(((lo + hi) / 2 - 10) / 5) * 5;
-  if (lo < tMin || hi > tMin + 20) tMin = Math.floor(lo / 5) * 5;
-  if (hi > tMin + 20) { step = 10; tMin = Math.floor(lo / 10) * 10; }
+  let step = 5, tMin;
+  if (lo >= 0) {
+    // bare plussgrader: aksen starter alltid på 0
+    tMin = 0;
+    step = hi <= 20 ? 5 : hi <= 40 ? 10 : 15;
+  } else {
+    tMin = Math.floor(((lo + hi) / 2 - 10) / 5) * 5;
+    if (lo < tMin || hi > tMin + 20) tMin = Math.floor(lo / 5) * 5;
+    if (hi > tMin + 20) { step = 10; tMin = Math.floor(lo / 10) * 10; }
+  }
   const span = step * 4;
   const pMaxData = Math.max(...hrs.map(h => h.precip));
   const pMax = [4, 8, 20, 40].find(v => v >= pMaxData) || Math.ceil(pMaxData);
@@ -755,7 +762,11 @@ function renderChart() {
   });
   // temperaturkurve
   const pts = hrs.map((h, i) => [x(i), y(h.temp)]);
-  g += `<path d="${catmull(pts)}" fill="none" stroke="var(--line)" stroke-width="${small ? 3 : 3.8}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // rød over 0 °C, blå under, med skarpt skifte ved nullstreken
+  const y0 = clamp(y(0), 0, H);
+  g += `<defs><linearGradient id="gTemp" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${H}">` +
+       `<stop offset="${(y0 / H).toFixed(4)}" stop-color="#e3262d"/><stop offset="${(y0 / H).toFixed(4)}" stop-color="#1f6fe0"/></linearGradient></defs>`;
+  g += `<path d="${catmull(pts)}" fill="none" stroke="url(#gTemp)" stroke-width="${small ? 3 : 3.8}" stroke-linecap="round" stroke-linejoin="round"/>`;
   g += `<g id="selLayer"></g>`;
 
   let svg = chart.querySelector("svg.plot");
@@ -812,7 +823,7 @@ function renderSel() {
   if (lay) lay.innerHTML =
     `<path d="M${px} ${y1}V${y2}" stroke="#2f5fc8" stroke-width="2" stroke-dasharray="5 4"/>` +
     `<path d="M${px} ${m.t + ph}v${small ? 6 : 9}" stroke="#2f5fc8" stroke-width="2" stroke-dasharray="5 4"/>` +
-    `<circle cx="${px}" cy="${py}" r="${small ? 6 : 8.5}" fill="#fff" stroke="var(--line)" stroke-width="3"/>`;
+    `<circle cx="${px}" cy="${py}" r="${small ? 6 : 8.5}" fill="#fff" stroke="${h.temp < 0 ? "#1f6fe0" : "var(--line)"}" stroke-width="3"/>`;
   $("#chart").setAttribute("aria-valuenow", i);
   $("#chart").setAttribute("aria-valuetext", `${$("#tipWhen").textContent}, ${fmt(h.temp)} grader, føles som ${fmt(h.feels)}, ${WX_NAME[h.type]}`);
   document.querySelectorAll(".sym").forEach(el => el.classList.toggle("on", +el.dataset.k === Math.min(7, Math.floor(i / 3))));
