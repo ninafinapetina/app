@@ -268,10 +268,17 @@ h1 {
   h1 { -webkit-text-stroke: 5px #1f63c4; }
   .search form { padding: 8px 18px; }
   .search input { font-size: 1.4rem; }   /* over 16 px, så mobilen ikke zoomer inn */
-  .top { gap: 10px 4px; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
-  .map { height: 210px; }
+  /* mobil: kart og snakkeboble til venstre, jenta til høyre ved siden av */
+  .top { gap: 10px 6px; grid-template-areas: "map girl" "bubble girl"; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); grid-template-rows: auto 1fr; }
+  .map { height: 170px; margin-top: 34px; align-self: start; }
+  .zoom { grid-auto-flow: column; top: 6px; right: 6px; gap: 4px; }
+  .zoom button { width: 26px; height: 26px; font-size: 1rem; border-radius: 8px; }
+  .credit { top: auto; bottom: 6px; left: 6px; font-size: 0.5rem; padding: 1px 4px; }
+  .r-label { right: auto; bottom: auto; left: 6px; top: 6px; }
   .controls { padding: 6px 10px; }
-  .pin-label { font-size: 1rem; }
+  .pin-label { font-size: 0.9rem; padding: 2px 8px; }
+  .fav { width: 22px; height: 22px; }
+  .fav svg { width: 17px; height: 17px; }
   .city { padding: 16px; }
   .city h2 { font-size: 1.9rem; }
   .coord { font-size: 1.05rem; }
@@ -280,8 +287,10 @@ h1 {
   .bubble.long { font-size: 0.9rem; padding: 18px 16px; }
   .bubble.long small { font-size: 0.72rem; }
   .bubble::after { right: -29px; width: 35px; height: 28px; }
-  .girl { height: 380px; }
-  .bubble-wrap { align-self: center; }
+  .girl { height: 330px; }
+  .bubble-wrap { align-self: start; }
+  .bubble { min-height: 0; padding: 18px 14px; font-size: 0.95rem; border-radius: 46% / 50%; }
+  .bubble.long { font-size: 0.82rem; padding: 14px 12px; }
   .meteo { padding: 22px 10px 16px; }
   .symbols { height: 44px; }
   .symbols .sym { width: 46px; height: 42px; }
