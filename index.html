@@ -109,7 +109,7 @@ h1 {
   background: var(--card); border: 4px solid var(--card-edge);
   border-radius: var(--r-card); box-shadow: var(--shadow);
 }
-.map { grid-area: map; position: relative; height: 290px; overflow: hidden; align-self: center; }
+.map { grid-area: map; position: relative; height: 290px; overflow: hidden; align-self: end; margin-bottom: 42px; }   /* PC: nær meteogrammet */
 .bubble-wrap { grid-area: bubble; }
 .girl { grid-area: girl; }
 .zoom { position: absolute; right: 8px; top: 8px; display: grid; gap: 4px; }
@@ -125,7 +125,7 @@ h1 {
 .map { --pinx: 0.5; }
 .pin { position: absolute; left: calc(var(--pinx) * 100%); top: 50%; transform: translate(-20px, -50px); display: flex; align-items: flex-start; }
 .pin > svg { filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3)); }
-.pin-label { display: inline-flex; align-items: center; gap: 4px; position: absolute; left: 20px; top: 52px; transform: translateX(-50%); margin: 0 !important; }
+.pin-label { display: inline-flex; align-items: center; gap: 4px; position: absolute; left: 20px; top: 60px; transform: translateX(-50%); margin: 0 !important; }
 .pin-label #pinLabel { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fav { all: unset; cursor: pointer; display: grid; place-items: center; width: 28px; height: 28px; margin-right: -6px; border-radius: 50%; }
 .fav svg path { fill: none; stroke: #9aa6c2; stroke-width: 2; transition: fill .2s, stroke .2s; }
@@ -255,7 +255,7 @@ h1 {
 }
 @media (max-width: 900px) {
   .top { grid-template-areas: "map map" "bubble girl"; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-bottom: -30px; }
-  .map { height: 240px; margin-top: 34px; }   /* samme luft over kartet som på PC */
+  .map { height: 240px; margin-top: 34px; margin-bottom: 0; align-self: center; }   /* samme luft over kartet som på PC */
   .bubble-wrap { align-self: center; }
   .girl { height: 370px; }
   .uv { margin-top: 0; align-self: stretch; width: 100%; }
@@ -1294,7 +1294,7 @@ function drawMap() {
   lc.fillStyle = "#c6e9a6";
   // grov verdensdata bare utenfor det detaljerte området (Norden + Svalbard)
   lc.save(); lc.beginPath(); lc.rect(0, 0, W, H);
-  [[2, 54.5, 32.5, 71.6], [8, 76, 31, 81], [-25, 34, 45, 72]].forEach(([w, so, e, n]) => {
+  [[8, 76, 31, 81], [-25, 34, 45, 72]].forEach(([w, so, e, n]) => {   // Europa-boksen dekker også Norden
     const x0 = mercX(w) * s - ox, x1 = mercX(e) * s - ox, y0 = mercY(n) * s - oy, y1 = mercY(so) * s - oy;
     lc.rect(x0, y0, x1 - x0, y1 - y0);
   });
@@ -1317,7 +1317,7 @@ function drawMap() {
   // innsjøer og elver
   ctx.fillStyle = WATER; ctx.strokeStyle = WATER_EDGE; ctx.lineWidth = 1;
   ctx.beginPath(); D.lakes.filter(visible).forEach(f => trace(ctx, f, true)); ctx.fill("evenodd"); ctx.stroke();
-  ctx.strokeStyle = "#7cc5ec"; ctx.lineWidth = state.zoom >= 8 ? 1.6 : 1; ctx.lineCap = "round";
+  ctx.strokeStyle = "#8fd0f2"; ctx.lineWidth = state.zoom >= 10 ? 6 : state.zoom >= 9 ? 4 : state.zoom >= 8 ? 2.4 : 1.4; ctx.lineCap = "round";
   ctx.beginPath(); D.rivers.filter(visible).forEach(f => trace(ctx, f, false)); ctx.stroke();
   // grenser
   ctx.setLineDash([6, 4]); ctx.strokeStyle = "rgba(120, 90, 140, 0.7)"; ctx.lineWidth = 1.5;
