@@ -27,6 +27,7 @@
   --shadow: 0 10px 28px rgba(10, 60, 130, 0.22), 0 2px 6px rgba(10, 60, 130, 0.12);
 }
 * { box-sizing: border-box; }
+html, body { overflow-x: clip; }   /* håret kan gå helt ut til kanten uten sideveis scrolling */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { margin: 0; }
 [hidden] { display: none !important; }
@@ -102,7 +103,7 @@ h1 {
   display: grid; align-items: end; gap: 22px;
   grid-template-areas: "map bubble girl";
   grid-template-columns: minmax(280px, 380px) minmax(0, 1fr) 310px;
-  margin-bottom: -40px; position: relative; z-index: 3; overflow-x: clip; overflow-clip-margin: 0;
+  margin-bottom: -40px; position: relative; z-index: 3;
 }
 .card {
   background: var(--card); border: 4px solid var(--card-edge);
@@ -166,7 +167,7 @@ h1 {
 .girl { position: relative; height: 440px; align-self: end; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .girl:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 20px; }
 
-.girl img { position: absolute; display: block; max-width: none; filter: drop-shadow(0 8px 10px rgba(10, 60, 130, 0.25)); }
+.girl img { position: absolute; display: block; max-width: none; pointer-events: none;   /* håret som stikker ut tar ikke imot trykk */ filter: drop-shadow(0 8px 10px rgba(10, 60, 130, 0.25)); }
 .girl .fit { transform-origin: 50% 95%; }
 .girl.swap .fit { animation: hop 0.55s cubic-bezier(.3, 1.5, .5, 1); }
 @keyframes hop { 0% { transform: scale(0.9, 1.06) translateY(6px); } 45% { transform: scale(1.04, 0.97) translateY(-8px); } 100% { transform: none; } }
@@ -276,7 +277,8 @@ h1 {
   .credit { top: auto; bottom: 6px; left: 6px; font-size: 0.5rem; padding: 1px 4px; }
   .r-label { right: auto; bottom: auto; left: 6px; top: 6px; }
   .controls { padding: 6px 10px; }
-  .pin-label { font-size: 0.9rem; padding: 2px 8px; }
+  .pin-label { font-size: 0.9rem; padding: 2px 8px; position: absolute; left: 20px; top: 54px; transform: translateX(-50%); margin: 0; max-width: 150px; }   /* under nålen, bort fra jenta */
+  .pin-label #pinLabel { overflow: hidden; text-overflow: ellipsis; }
   .fav { width: 22px; height: 22px; }
   .fav svg { width: 17px; height: 17px; }
   .city { padding: 16px; }
@@ -938,7 +940,7 @@ function ncText(nc) {
   const byge = snow ? "snøbyge" : "regnbyge", byger = snow ? "snøbyger" : "regnbyger", stoff = snow ? "Snøen" : "Regnet";
   let say;
   if (!segs.length) say = `Ikke noe ${word} de neste 90 minuttene.`;
-  else if (segs.length === 1 && segs[0][0] === 0 && segs[0][1] === wet.length - 1) say = `Det ${verb} hele tiden de neste 90 minuttene.`;
+  else if (segs.length === 1 && segs[0][0] === 0 && segs[0][1] === wet.length - 1) say = snow ? "Det snør, ta på vinterklær!" : "Det regner, ta på regntøy!";
   else if (segs.length === 1 && segs[0][0] === 0) say = `Det ${verb} nå, men det gir seg ${when(segs[0][1] + 1)}.`;
   else if (segs.length === 1 && segs[0][1] === wet.length - 1) say = `Det begynner å ${inf} ${when(segs[0][0])}.`;
   else if (segs.length === 1) say = `Det kommer en ${byge} ${when(segs[0][0])}.`;
@@ -948,7 +950,8 @@ function ncText(nc) {
     const pause = gap * 5 >= 20 ? "med lengre perioder med opphold" : "med korte opphold mellom bygene";
     say = (wet[0] ? `Det er ${byger} nå.` : `Det kommer ${byger} ${when(segs[0][0])}.`) + ` ${stoff} vil komme og gå, ${pause}.`;
   }
-  const sub = !wet.some(Boolean) ? "Fint å være ute!" : max < 1 ? `Bare litt ${word}.` : max < 4 ? `Vanlig ${word}, ta på ${snow ? "votter" : "regntøy"}.` : `Mye ${word}! Ta på ${snow ? "vinterdress" : "regntøy"} eller vent litt.`;
+  const allWet = wet.every(Boolean);
+  const sub = allWet ? `Det ${verb} hele tiden de neste 90 minuttene.` : !wet.some(Boolean) ? "Fint å være ute!" : max < 1 ? `Bare litt ${word}.` : max < 4 ? `Vanlig ${word}, ta på ${snow ? "votter" : "regntøy"}.` : `Mye ${word}! Ta på ${snow ? "vinterdress" : "regntøy"} eller vent litt.`;
   return { say, sub, dry: !wet.some(Boolean), snow };
 }
 /* ---------- stemme: beste norske stemme på enheten, rolig tempo og bare litt lysere tone ---------- */
