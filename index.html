@@ -122,9 +122,11 @@ h1 {
 .r-label { position: absolute; right: 6px; bottom: 6px; background: rgba(255, 255, 255, 0.85); border-radius: 7px; padding: 1px 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); font: 800 0.66rem var(--body); color: var(--ink); font-variant-numeric: tabular-nums; }
 .credit { position: absolute; left: 8px; top: 8px; font: 700 0.62rem var(--body); color: #4a5a6e; background: rgba(255, 255, 255, 0.75); padding: 1px 6px; border-radius: 6px; }
 .map canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border-radius: 20px; }
-.pin { position: absolute; left: 50%; top: 50%; transform: translate(-20px, -50px); display: flex; align-items: flex-start; }
+.map { --pinx: 0.5; }
+.pin { position: absolute; left: calc(var(--pinx) * 100%); top: 50%; transform: translate(-20px, -50px); display: flex; align-items: flex-start; }
 .pin > svg { filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3)); }
-.pin-label { display: inline-flex; align-items: center; gap: 4px; }
+.pin-label { display: inline-flex; align-items: center; gap: 4px; position: absolute; left: 20px; top: 52px; transform: translateX(-50%); margin: 0 !important; }
+.pin-label #pinLabel { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fav { all: unset; cursor: pointer; display: grid; place-items: center; width: 28px; height: 28px; margin-right: -6px; border-radius: 50%; }
 .fav svg path { fill: none; stroke: #9aa6c2; stroke-width: 2; transition: fill .2s, stroke .2s; }
 .fav[aria-pressed="true"] svg path { fill: #ffc21a; stroke: #d98a00; }
@@ -277,8 +279,8 @@ h1 {
   .credit { top: auto; bottom: 6px; left: 6px; font-size: 0.5rem; padding: 1px 4px; }
   .r-label { right: auto; bottom: auto; left: 6px; top: 6px; }
   .controls { padding: 6px 10px; }
-  .pin-label { font-size: 0.9rem; padding: 2px 8px; position: absolute; left: 20px; top: 54px; transform: translateX(-50%); margin: 0; max-width: 150px; }   /* under nålen, bort fra jenta */
-  .pin-label #pinLabel { overflow: hidden; text-overflow: ellipsis; }
+  .pin-label { font-size: 0.85rem; padding: 2px 6px 2px 8px; }
+  .pin-label #pinLabel { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fav { width: 22px; height: 22px; }
   .fav svg { width: 17px; height: 17px; }
   .city { padding: 16px; }
@@ -1271,7 +1273,9 @@ function drawMap() {
   const ctx = cv.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const D = mapData(), s = Math.pow(2, state.zoom);
-  const ox = mercX(city.lon) * s - W / 2, oy = mercY(city.lat) * s - H / 2;
+  const pinx = parseFloat(getComputedStyle(cv.parentElement).getPropertyValue("--pinx")) || 0.5;
+  $(".pin-label").style.maxWidth = (W - 16) + "px";
+  const ox = mercX(city.lon) * s - W * pinx, oy = mercY(city.lat) * s - H / 2;
   const vb = [ox / s, oy / s, (ox + W) / s, (oy + H) / s];
   const pad = 2 / s;
   const visible = f => !(f.bb[2] < vb[0] - pad || f.bb[0] > vb[2] + pad || f.bb[3] < vb[1] - pad || f.bb[1] > vb[3] + pad);
@@ -1326,7 +1330,7 @@ function drawMap() {
   // stedsnavn
   const maxRank = state.zoom >= 9 ? 10 : state.zoom >= 8 ? 8 : state.zoom >= 7 ? 6 : 4;
   ctx.font = "800 11px Nunito, sans-serif"; ctx.textAlign = "center"; ctx.lineJoin = "round";
-  const placed = [[W / 2, H / 2 - 20, 70]];
+  const placed = [[W * pinx, H / 2 - 20, 70], [W * pinx, H / 2 + 14, 90]];
   D.places.filter(p => p.rank <= maxRank).sort((a, b) => a.rank - b.rank).forEach(p => {
     const x = p.x * s - ox, y = p.y * s - oy;
     if (x < 20 || x > W - 20 || y < 12 || y > H - 18) return;
