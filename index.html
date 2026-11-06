@@ -216,7 +216,7 @@ h1 {
 .meteo:not(.loading) .meteo-msg { display: none; }
 
 /* ---------- nedbør neste 90 min ---------- */
-.below { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 22px; align-items: start; }
+.below { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 22px; align-items: stretch; }
 .nowcast { padding: 18px 22px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .nc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .nc-head h3 { margin: 0; font: 700 1.5rem/1.1 var(--display); color: var(--ink); flex: 1 1 auto; min-width: 0; }
@@ -230,7 +230,7 @@ h1 {
 .nc-chart text { font-family: var(--body); font-weight: 700; fill: #1c2650; }
 .nc-link { align-self: flex-start; font: 800 0.92rem var(--body); color: var(--accent); text-decoration: none; }
 .nc-link:hover, .nc-link:focus-visible { text-decoration: underline; }
-.below .uv { margin-top: -54px; grid-column: 2; }
+.below .uv { margin: 0; align-self: stretch; grid-column: 2; }   /* like høy som nedbørkortet */
 
 /* ---------- UV ---------- */
 .uv {
