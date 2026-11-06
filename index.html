@@ -270,7 +270,7 @@ h1 {
   .search input { font-size: 1.4rem; }   /* over 16 px, så mobilen ikke zoomer inn */
   /* mobil: kart og snakkeboble til venstre, jenta til høyre ved siden av */
   .top { gap: 10px 6px; grid-template-areas: "map girl" "bubble girl"; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); grid-template-rows: auto 1fr; }
-  .map { height: 170px; margin-top: 34px; align-self: start; }
+  .map { height: 195px; margin-top: 34px; align-self: start; }
   .zoom { grid-auto-flow: column; top: 6px; right: 6px; gap: 4px; }
   .zoom button { width: 26px; height: 26px; font-size: 1rem; border-radius: 8px; }
   .credit { top: auto; bottom: 6px; left: 6px; font-size: 0.5rem; padding: 1px 4px; }
@@ -1258,7 +1258,7 @@ function texture() {
   }
   return landTex = cv;
 }
-state.zoom = 8;
+state.zoom = matchMedia("(max-width: 560px)").matches ? 7.5 : 8;   // litt mer oversikt på mobil
 function drawMap() {
   const cv = $("#mapCanvas"), city = state.city;
   const dpr = Math.min(3, devicePixelRatio || 1);
