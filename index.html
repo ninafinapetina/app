@@ -537,7 +537,7 @@ function symbolSVG(type) {
 const FIGS = JSON.parse(document.getElementById("figdata").textContent);
 // Ti figurer, alle i samme skala med føttene på samme linje.
 const FIG_TEXT = {
-  n01: { alt: "Jenta i gul regnjakke og gule gummistøvler, med gul paraply", say: w => `${w} bør du ha på deg <b>regnjakke og gummistøvler</b>, og ta med <b>paraply</b>!` },
+  n01: { alt: "Jenta i gul regnjakke og gule gummistøvler, med gul paraply", say: w => `${w} bør du ha på deg <b>regntøy</b>!` },
   n02: { alt: "Jenta i lilla dunjakke, blå lue, skjerf og votter", say: w => `${w} bør du ha på deg <b>varm jakke, lue og votter</b>!` },
   n03: { alt: "Jenta i tykk vinterjakke med pelshette, skjerf og votter", say: w => `${w} bør du ha på deg <b>den tykkeste vinterjakka, skjerf og votter</b>!` },
   n04: { alt: "Jenta i rosa vest over genser, med rosa lue", say: w => `${w} holder det med <b>vest, genser og lue</b>!` },
@@ -949,11 +949,11 @@ function ncText(nc) {
   else {
     let gap = 0;
     for (let k = 1; k < segs.length; k++) gap = Math.max(gap, segs[k][0] - segs[k - 1][1] - 1);
-    const pause = gap * 5 >= 20 ? "med lengre perioder med opphold" : "med korte opphold mellom bygene";
+    const pause = gap * 5 >= 20 ? "med lengre perioder med opphold" : "med kort opphold mellom bygene";
     say = (wet[0] ? `Det er ${byger} nå.` : `Det kommer ${byger} ${when(segs[0][0])}.`) + ` ${stoff} vil komme og gå, ${pause}.`;
   }
   const allWet = wet.every(Boolean);
-  const sub = allWet ? `Det ${verb} hele tiden de neste 90 minuttene.` : !wet.some(Boolean) ? "Fint å være ute!" : max < 1 ? `Bare litt ${word}.` : max < 4 ? `Vanlig ${word}, ta på ${snow ? "votter" : "regntøy"}.` : `Mye ${word}! Ta på ${snow ? "vinterdress" : "regntøy"} eller vent litt.`;
+  const sub = allWet ? `Det ${verb} hele tiden de neste 90 minuttene.` : !wet.some(Boolean) ? "Fint å være ute!" : max < 1 ? `Bare litt ${word}.` : max < 4 ? `Ta på ${snow ? "votter" : "regntøy"}.` : `Mye ${word}! Ta på ${snow ? "vinterdress" : "regntøy"} eller vent litt.`;
   return { say, sub, dry: !wet.some(Boolean), snow };
 }
 /* ---------- stemme: beste norske stemme på enheten, rolig tempo og bare litt lysere tone ---------- */
