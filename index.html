@@ -593,6 +593,17 @@ function dayWindow(hrs, d0, fromH, toH) {
   if (win.length < 3) win = hrs.filter(x => sameDay(x.t, d0) && (fromH < 16 ? x.t.getHours() >= 4 && x.t.getHours() < 16 : x.t.getHours() >= 16));
   return win;
 }
+// lengste sammenhengende regn: varighet i timer og mengde
+function rainRun(pts) {
+  const step = pts.length > 1 ? (pts[1].t - pts[0].t) / 3600e3 : 1;
+  let best = { hours: 0, mm: 0 }, cur = { hours: 0, mm: 0 };
+  for (const x of pts) {
+    if (WET_TYPES.includes(x.type)) { cur = { hours: cur.hours + step, mm: cur.mm + x.precip }; if (cur.hours > best.hours || (cur.hours === best.hours && cur.mm > best.mm)) best = cur; }
+    else cur = { hours: 0, mm: 0 };
+  }
+  return best;
+}
+const bigRain = pts => { const r = rainRun(pts); return r.hours > 6 && r.mm > 8; };   // blått regnsett
 function windowSummary(win, base) {
   const wet = win.filter(x => WET_TYPES.includes(x.type));
   const avg = win.reduce((a, x) => a + x.temp, 0) / win.length;
@@ -601,10 +612,10 @@ function windowSummary(win, base) {
     type: win.reduce((a, x) => (RANK.indexOf(x.type) > RANK.indexOf(a) ? x.type : a), "clear") };
   const total = wet.reduce((a, x) => a + x.precip, 0);
   let key;
-  if (wet.length) key = (h.type === "thunder" || h.type === "heavy" || (win.length >= 3 && wet.length >= win.length * 0.8) || total >= 3) ? "n10" : "n01p";
-  else if (h.type === "snow") key = "n03";
-  else key = outfitFor({ ...h, type: "cloudy" });
-  return { key, wet: wet.length > 0, snow: h.type === "snow", level: warmLevel(avg), avg };
+  const sunny = win.every(x => x.type === "clear" || x.type === "partly");
+  if (wet.length) key = bigRain(win) ? "n10" : "n01p";
+  else key = outfitFor({ ...h, type: "cloudy" }, { sunny });
+  return { key, wet: wet.length > 0, snow: h.type === "snow", level: warmLevel(h.feels), avg, big: key === "n10" };
 }
 // én plan per skoledag: klær for kl 06–16, og hva som endrer seg kl 16–22
 // i dag og i morgen (begge visninger) + skoledager i 7-dagersvisningen får én plan for hele dagen
@@ -626,8 +637,8 @@ function dayPlan(hrs, i) {
   if (b) {
     if (b.level < a.level) later.push(`blir det kaldere, da trenger du ${NEED[b.level]}`);
     else if (b.avg - a.avg >= 6) later.push("blir det varmere");   // varmere = minst 6 grader høyere
-    if (b.wet && !a.wet) later.push(b.key === "n10" ? "kommer det mye regn, husk regntøy" : "kommer det regn, husk paraply");
-    else if (b.wet && a.wet && b.key === "n10" && a.key !== "n10") later.push("regner det mer, husk regntøy");
+    if (b.wet && !a.wet) later.push(b.big ? "kommer det mye regn, husk regntøy" : "kommer det regn, husk paraply");
+    else if (b.wet && a.wet && b.big && !a.big) later.push("regner det mer, husk regntøy");
     else if (!b.wet && a.wet) later.push("blir det opphold");
     if (b.snow && !a.snow) later.push("kommer det snø");
   }
@@ -649,7 +660,7 @@ function rainAllDay(hrs, t) {
 }
 function outfitAt(hrs, i) {
   const allRain = rainAllDay(hrs, hrs[i].t);
-  if (allRain) return allRain.heavy ? "n10" : "n01";   // regn hele dagen: regntøy hele dagen
+  if (allRain) return "n10";   // regn hele dagen: blått regnsett hele dagen
   if (planDay(hrs[i])) {
     const plan = dayPlan(hrs, i);
     if (plan) return plan.keyA;
@@ -665,45 +676,36 @@ function outfitAt(hrs, i) {
       type: day.reduce((a, x) => (RANK.indexOf(x.type) > RANK.indexOf(a) ? x.type : a), "clear") };
     // regn hele dagen (alle periodene på dagtid) = regntøy; regn av og til = paraply
     const wetDay = daytime.length ? daytime : day;
-    if (h.type === "thunder" || h.type === "heavy") return "n10";
-    if (WET_TYPES.includes(h.type)) return wetDay.every(x => WET_TYPES.includes(x.type)) ? "n10" : "n01p";
-    return outfitFor(h);
+    if (WET_TYPES.includes(h.type)) return wetDay.every(x => WET_TYPES.includes(x.type)) || bigRain(day) ? "n10" : "n01p";
+    return outfitFor(h, { sunny: wetDay.every(x => x.type === "clear" || x.type === "partly") });
   }
   const w2 = hrs.slice(i, i + 2), w4 = hrs.slice(i, i + 4);
   const worst = w2.reduce((a, b) => (RANK.indexOf(b.type) > RANK.indexOf(a.type) ? b : a));
   const h = { ...hrs[i],
     temp: Math.min(...w2.map(x => x.temp)), feels: Math.min(...w2.map(x => x.feels)),
     wind: Math.max(...w2.map(x => x.wind || 0)), gust: Math.max(...w2.map(x => x.gust || 0)), type: worst.type };
-  if (h.type === "thunder" || h.type === "heavy") return outfitFor(h);
-  if (WET_TYPES.includes(h.type)) {
-    // byger = regn, opphold, regn igjen innen 4 timer → paraply; ellers sammenhengende regn → regntøy
-    const flags = w4.map(x => (WET_TYPES.includes(x.type) ? "1" : "0")).join("");
-    return /10+1/.test(flags) ? "n01p" : "n01";
-  }
+  if (WET_TYPES.includes(h.type)) return bigRain(hrs.slice(i, i + 12)) ? "n10" : "n01p";
   return outfitFor(h);
 }
-function outfitFor(h) {
-  const t = Math.round(h.temp);          // samme tall som i boksen
-  const wind = h.wind || 0;
-  if (h.type === "thunder" || h.type === "heavy") return "n10";
-  if (h.type === "light" || h.type === "rain") return "n01";
-  if (h.type === "snow" || t <= -6) return "n03";
-  if (wind >= 8 && t <= 15) return "n09";
-  if (t <= 3) return "n02";
-  if (t <= 8) return "n04";
-  if (t <= 13) return "n05";
-  if (t <= 18) return "n06";
-  if (t <= 22) return "n08";
-  return "n07";
+// klær etter FØLT temperatur (ctx.sunny = sol hele dagen/perioden)
+function outfitFor(h, ctx = {}) {
+  const f = h.feels ?? h.temp, t = h.temp, wind = h.wind || 0;
+  if (WET_TYPES.includes(h.type)) return "n01p";                    // regn: paraply (regntøy avgjøres av regnreglene)
+  if (f < -5) return "n03";                                         // tykkeste jakka med snøfnugg: bare følt under −5
+  if (wind >= 8 && wind <= 12 && f <= 15) return "n09";             // vindjakke
+  if (f <= 5) return "n02";                                         // lilla jakke: følt −4,9 til 5
+  if (t > 20.1) return state.city && state.city.coastal ? "n08" : "n07";   // over 20,1 °C: shorts ved kysten, ellers kjole
+  if (f > 12) return "n04";                                         // rosa vest: følt 12–20
+  return ctx.sunny ? "n04" : "n05";                                 // følt 5–12: vest hvis sol hele dagen, ellers grønn jakke
 }
 // varmenivå bare ut fra temperatur (0 = kaldest)
-function warmLevel(t) { t = Math.round(t); return t <= -6 ? 0 : t <= 3 ? 1 : t <= 8 ? 2 : t <= 13 ? 3 : t <= 18 ? 4 : t <= 22 ? 5 : 6; }
-const NEED = ["den tykkeste vinterjakka", "varm jakke, lue og votter", "vest og genser", "jakke", "tynn jakke", "en genser"];
+function warmLevel(f) { return f < -5 ? 0 : f <= 5 ? 1 : f <= 12 ? 2 : f <= 20 ? 3 : 4; }   // etter følt temperatur
+const NEED = ["den tykkeste vinterjakka", "varm jakke, lue og votter", "jakke og genser", "vest og genser", "T-skjorte"];
 // ser opptil 8 timer fram: blir det så kaldt at man trenger mer klær?
 function coolerLater(i) {
-  const hrs = state.hours, now = warmLevel(hrs[i].temp);
+  const hrs = state.hours, now = warmLevel(hrs[i].feels);
   for (let k = i + 1; k <= i + 8 && k < hrs.length && sameDay(hrs[k].t, hrs[i].t); k++) {
-    const lv = warmLevel(hrs[k].temp);
+    const lv = warmLevel(hrs[k].feels);
     if (lv < now) {
       const hr = hrs[k].t.getHours();
       const when = hr >= 17 ? "utover kvelden" : hr >= 12 ? "utover ettermiddagen" : hr < 6 ? "i natt" : "utover morgenen";
@@ -846,6 +848,7 @@ async function fetchOpenMeteo(city) {
 
 async function load(city) {
   state.city = city;
+  if (city.coastal === undefined) { try { city.coastal = isCoastal(city.lat, city.lon); } catch { city.coastal = !!city.coast; } }
   // nytt sted: glem det jenta sa om radaren for forrige sted
   $("#bubble").classList.remove("talk");
   if (typeof stopRadar === "function") { stopRadar(); state.rMin = 0; $("#rLabel").textContent = "Nå"; }
@@ -1183,7 +1186,7 @@ function renderSel() {
   // natt (kl 22–06): hun minner om at man helst bør sove, men gir klesrådet likevel
   const hr = h.t.getHours(), night = hr >= 22 || hr < 6;
   const isToday = sameDay(h.t, new Date());
-  let main = FIG_TEXT[key].say(isToday ? (long ? "I dag" : "Akkurat nå") : dayName === "I morgen" ? "I morgen" : long ? "På " + DAYS[h.t.getDay()] : whenWords(h, i));
+  let main = FIG_TEXT[key].say(isToday ? "I dag" : dayName === "I morgen" ? "I morgen" : long ? "På " + DAYS[h.t.getDay()] : whenWords(h, i));
   // én boble per dag: klær for dagen (kl 06–16), og i rødt hva som endrer seg senere (kl 16–22)
   if (planDay(h)) { const plan = dayPlan(hrs, i); if (plan && plan.later) extra = plan.later + (extra && !/regner|snør|tordner/.test(extra) ? " " + extra : ""); }
   const allRain = rainAllDay(hrs, h.t);
@@ -1195,7 +1198,8 @@ function renderSel() {
   } else if (night && !long) {
     const rest = key === "n09" ? "trenger du <b>vindjakke og skjerf</b>, for det blåser!" : key === "n01p" ? "ta med <b>paraply</b>, for det kommer litt regn innimellom!" : FIG_TEXT[key].say("").trim();
     main = `I natt bør du helst sove! Men hvis du må ut og reise, ${rest}`;
-    extra = "";   // ingen rød tekst om natta (kl 22–06)
+    // om natta: bare rød tekst om regn og sterk vind
+    extra = (extra.match(/Det (tordner, regner og blåser|regner og blåser|regner, og det blåser) mye!/) || [""])[0];
   }
   // 7 dager: i morgen samme klær som i dag → kort beskjed (gjelder bare i morgen)
   if (long && dayName === "I morgen") {
@@ -1608,6 +1612,30 @@ function texture() {
   return landTex = cv;
 }
 state.zoom = matchMedia("(max-width: 560px)").matches ? 7.5 : 8;   // litt mer oversikt på mobil
+// ligger stedet ved havet? Sjekker om det er hav (utenfor alt land) innen ca. 6 km
+function inPoly(x, y, f) {
+  if (x < f.bb[0] || x > f.bb[2] || y < f.bb[1] || y > f.bb[3]) return false;
+  let inside = false;
+  for (const { pts } of f.rings) {
+    for (let i = 0, j = pts.length - 2; i < pts.length; j = i, i += 2) {
+      const xi = pts[i], yi = pts[i + 1], xj = pts[j], yj = pts[j + 1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+  }
+  return inside;
+}
+function isCoastal(lat, lon) {
+  const D = mapData();
+  // detaljerte kart i Europa (og Svalbard); grovt verdenskart bare utenfor
+  const inEurope = (lat >= 34 && lat <= 72 && lon >= -25 && lon <= 45) || (lat >= 76 && lat <= 81 && lon >= 8 && lon <= 31);
+  const land = inEurope ? D.land : D.world;
+  const onLand = (la, lo) => { const x = mercX(lo), y = mercY(la); return land.some(f => inPoly(x, y, f)); };
+  for (const r of [3, 6]) for (let k = 0; k < 16; k++) {
+    const a = k / 16 * 2 * Math.PI, la = lat + r / 111.2 * Math.sin(a), lo = lon + r / (111.2 * Math.cos(lat * Math.PI / 180)) * Math.cos(a);
+    if (!onLand(la, lo)) return true;
+  }
+  return false;
+}
 function drawMap() {
   const cv = $("#mapCanvas"), city = state.city;
   const dpr = Math.min(3, devicePixelRatio || 1);
