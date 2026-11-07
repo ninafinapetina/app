@@ -190,19 +190,28 @@ h1 {
 .chart text { font-family: var(--body); font-weight: 700; fill: #1c2650; }
 .tip {
   position: absolute; z-index: 4; pointer-events: auto; cursor: grab;
-  background: #fbfdff; border: 3px solid #3b78e3; border-radius: 20px;
-  padding: 8px 18px 10px; text-align: center; min-width: 210px;
+  background: var(--tip-bg, #fbfdff); border: 3px solid #3b78e3; border-radius: 20px;
+  padding: 6px 14px 11px; text-align: center; min-width: 0;
   box-shadow: 0 6px 16px rgba(20, 70, 160, 0.22);
 }
 .tip::after {
   content: ""; position: absolute; left: var(--tail, 50%); bottom: -11px; width: 18px; height: 18px; margin-left: -9px;
-  background: #fbfdff; border-right: 3px solid #3b78e3; border-bottom: 3px solid #3b78e3; transform: rotate(45deg);
+  background: var(--tip-tail, #fbfdff); border-right: 3px solid #3b78e3; border-bottom: 3px solid #3b78e3; transform: rotate(45deg);
 }
 .tip.below::after { bottom: auto; top: -11px; transform: rotate(225deg); }
 .tip .when { font: 600 1.15rem var(--display); color: #1b2fa0; }
-.tip .t { font: 700 2.5rem/1.05 var(--display); color: #101a4f; font-variant-numeric: tabular-nums; }
-.tip .f { font: 700 1rem var(--body); color: #1c2650; }
-.tip .w { font: 800 0.8rem var(--body); color: #3b78e3; letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
+/* kompakt: temperatur og følt ved siden av hverandre, nedbør til venstre og vind til høyre */
+.tip > * { position: relative; z-index: 1; }   /* teksten ligger over den hvite halen */
+.tip .moon { display: inline-flex; align-self: center; }
+.tip .moon:empty { display: none; }
+.tip .tr { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
+.tip .t { font: 700 2.1rem/1.05 var(--display); color: #101a4f; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tip .f { font: 700 0.9rem/1.15 var(--body); color: #1c2650; white-space: nowrap; }
+.tip .tb { display: flex; justify-content: space-between; gap: 12px; margin-top: 3px; font: 800 0.78rem var(--body); letter-spacing: 0.02em; white-space: nowrap; }
+.tip .w { color: #3b78e3; }
+.tip .wd { color: #5a6a8a; }
+.tip .wd:empty { display: none; }
+.tip .tb:has(.wd:empty) { justify-content: center; }
 .legend { display: flex; flex-wrap: wrap; gap: 10px 34px; align-items: center; margin: 14px 0 0 60px; font: 700 1.15rem var(--body); color: #1c2650; }
 .legend span { display: inline-flex; align-items: center; gap: 10px; }
 .legend i { display: inline-block; }
@@ -210,6 +219,10 @@ h1 {
 .legend .l-bar { width: 44px; height: 26px; border-radius: 4px; background: linear-gradient(#6fd2ff, var(--rain)); }
 .legend .model { margin-left: auto; font: 800 0.8rem var(--body); color: var(--ink-soft); }
 .legend .hint { color: var(--accent); font-size: 0.98rem; }
+.view-btn { font: 800 1rem var(--body); color: #fff; background: var(--accent); border: 0; border-radius: 999px; padding: 8px 18px; cursor: pointer; box-shadow: 0 2px 6px rgba(20, 70, 160, 0.25); }
+.view-btn:hover { background: #2560c8; }
+.view-btn:focus-visible { outline: 3px solid #9fd0ff; outline-offset: 2px; }
+.view-btn[aria-pressed="true"] { background: #fff; color: var(--accent); border: 2px solid var(--accent); }
 
 .meteo-msg { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 10px; text-align: center; }
 .meteo-msg p { margin: 0; font: 600 1.4rem/1.3 var(--display); color: var(--ink); text-wrap: balance; }
@@ -238,13 +251,15 @@ h1 {
 /* ---------- UV ---------- */
 .uv {
   position: relative; z-index: 4; align-self: flex-end; margin-top: -54px; margin-right: 6px;
-  width: min(420px, 100%); display: flex; align-items: center; gap: 14px; padding: 18px 22px 18px 28px;
+  width: min(500px, 100%); display: flex; align-items: center; gap: 14px; padding: 18px 22px 18px 28px;
   background: linear-gradient(135deg, #f2fbef, #ddf3e3); border: 4px solid #fff; border-radius: 30px; box-shadow: var(--shadow);
 }
 .uv h3 { margin: 0; display: flex; align-items: center; gap: 12px; font: 700 2.5rem/1 var(--display); color: var(--uvc, #217a1d); }
 .uv .num { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font: 700 1.55rem var(--display); color: #fff; background: radial-gradient(circle at 35% 30%, var(--uvl, #5bd44f), var(--uvc, #24992b)); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.15); }
 .uv p { margin: 8px 0 0; font: 600 1.3rem/1.25 var(--display); color: #1d2a63; }
 .uv .txt { flex: 1; min-width: 0; }
+.uv h3 { flex-wrap: wrap; }
+.uv .uv-day { color: var(--uvc, #217a1d); font-size: 0.75em; white-space: nowrap; }
 .uv svg { flex: none; }
 
 /* ---------- responsive ---------- */
@@ -298,10 +313,11 @@ h1 {
   .meteo { padding: 22px 10px 16px; }
   .symbols { height: 44px; }
   .symbols .sym { width: 46px; height: 42px; }
-  .tip { min-width: 150px; padding: 6px 12px 8px; border-radius: 16px; }
+  .tip { min-width: 0; padding: 4px 10px 9px; border-radius: 14px; }
   .tip .when { font-size: 0.95rem; }
-  .tip .t { font-size: 1.8rem; }
-  .tip .f { font-size: 0.82rem; }
+  .tip .t { font-size: 1.5rem; }
+  .tip .f { font-size: 0.72rem; }
+  .tip .tb { font-size: 0.68rem; gap: 8px; }
   .legend { margin-left: 8px; font-size: 0.95rem; gap: 8px 18px; }
   .legend .l-line { width: 36px; }
   .legend .l-bar { width: 28px; height: 18px; }
@@ -407,15 +423,14 @@ h1 {
     <div class="chart" id="chart" tabindex="0" role="slider" aria-label="Velg time i meteogrammet" aria-valuemin="0" aria-valuemax="24" aria-valuenow="0">
       <div class="tip" id="tip">
         <div class="when" id="tipWhen"></div>
-        <div class="t" id="tipTemp"></div>
-        <div class="f" id="tipFeels"></div>
-        <div class="w" id="tipWx"></div>
+        <div class="tr"><span class="t" id="tipTemp"></span><span class="f" id="tipFeels"></span><span class="moon" id="tipMoon" aria-hidden="true"></span></div>
+        <div class="tb"><span class="w" id="tipWx"></span><span class="wd" id="tipWind"></span></div>
       </div>
     </div>
     <div class="legend">
       <span><i class="l-line"></i>Temperatur (°C)</span>
-      <span><i class="l-bar"></i>Nedbør (mm)</span>
-      <span class="hint">← Dra boksen for å se time for time →</span>
+      <span><i class="l-bar"></i><span id="precipLegend">Nedbør (mm)</span></span>
+      <button type="button" class="view-btn" id="viewBtn" aria-pressed="false" hidden>Været fremover →</button>
       <span class="model" id="modelLabel"></span>
     </div>
   </section>
@@ -538,6 +553,7 @@ const FIGS = JSON.parse(document.getElementById("figdata").textContent);
 // Ti figurer, alle i samme skala med føttene på samme linje.
 const FIG_TEXT = {
   n01: { alt: "Jenta i gul regnjakke og gule gummistøvler, med gul paraply", say: w => `${w} bør du ha på deg <b>regntøy</b>!` },
+  n01p: { alt: "Jenta i gul regnjakke og gule gummistøvler, med gul paraply", say: w => `${w} kommer det litt regn innimellom, så ta med <b>paraply</b>!` },
   n02: { alt: "Jenta i lilla dunjakke, blå lue, skjerf og votter", say: w => `${w} bør du ha på deg <b>varm jakke, lue og votter</b>!` },
   n03: { alt: "Jenta i tykk vinterjakke med pelshette, skjerf og votter", say: w => `${w} bør du ha på deg <b>den tykkeste vinterjakka, skjerf og votter</b>!` },
   n04: { alt: "Jenta i rosa vest over genser, med rosa lue", say: w => `${w} holder det med <b>vest, genser og lue</b>!` },
@@ -549,6 +565,123 @@ const FIG_TEXT = {
   n10: { alt: "Jenta i mørkeblå regnjakke med hette og gummistøvler", say: w => `${w} bør du ha på deg <b>regnjakke med hette og gummistøvler</b>!` }
 };
 const WET = new Set(["light", "rain", "heavy", "thunder"]);
+FIGS.n01p = FIGS.n01;   // samme bilde, annen tekst
+const WET_TYPES = ["light", "rain", "heavy", "thunder"];
+const RANK = ["clear", "partly", "cloudy", "snow", "light", "rain", "heavy", "thunder"];
+// klær velges for et 2-timers vindu fra valgt time, så figuren ikke hopper for mye.
+// Kommer det regn i løpet av de 2 timene, sjekkes 4 timer: sammenhengende regn = regntøy, regn av og på (byger) = paraply.
+// bare i morgen, og bare når i morgen er en skoledag (mandag–fredag): 1 = først på dagen (før kl 16), 2 = senere på dagen.
+// Resten av langtidsvarselet har ett bilde for hele dagen.
+function tomorrowPart(h) {
+  const tm = new Date(); tm.setDate(tm.getDate() + 1);
+  if (!sameDay(h.t, tm)) return 0;
+  const wd = h.t.getDay();
+  if (wd === 0 || wd === 6) return 0;    // helg: ett bilde for hele dagen
+  return h.t.getHours() < 16 ? 1 : 2;
+}
+// skoledag i 7-dagersvisningen: mandag–fredag, fra i morgen av
+function schoolDay(h) {
+  const now = new Date();
+  if (sameDay(h.t, now) || h.t < now) return false;
+  const wd = h.t.getDay(); return wd >= 1 && wd <= 5;
+}
+// timer (eller 6-timersverdier lenger fram) i et tidsrom på dagen
+function dayWindow(hrs, d0, fromH, toH) {
+  const from = new Date(d0); from.setHours(fromH, 0, 0, 0);
+  const to = new Date(d0); to.setHours(toH, 0, 0, 0);
+  let win = (state.allHours || []).filter(x => x.t >= from && x.t < to && +x.t > Date.now() - 3600e3);
+  if (win.length < 3) win = hrs.filter(x => sameDay(x.t, d0) && (fromH < 16 ? x.t.getHours() >= 4 && x.t.getHours() < 16 : x.t.getHours() >= 16));
+  return win;
+}
+function windowSummary(win, base) {
+  const wet = win.filter(x => WET_TYPES.includes(x.type));
+  const avg = win.reduce((a, x) => a + x.temp, 0) / win.length;
+  const h = { ...base, temp: avg, feels: win.reduce((a, x) => a + x.feels, 0) / win.length,
+    wind: Math.max(...win.map(x => x.wind || 0)), gust: Math.max(...win.map(x => x.gust || 0)),
+    type: win.reduce((a, x) => (RANK.indexOf(x.type) > RANK.indexOf(a) ? x.type : a), "clear") };
+  const total = wet.reduce((a, x) => a + x.precip, 0);
+  let key;
+  if (wet.length) key = (h.type === "thunder" || h.type === "heavy" || (win.length >= 3 && wet.length >= win.length * 0.8) || total >= 3) ? "n10" : "n01p";
+  else if (h.type === "snow") key = "n03";
+  else key = outfitFor({ ...h, type: "cloudy" });
+  return { key, wet: wet.length > 0, snow: h.type === "snow", level: warmLevel(avg), avg };
+}
+// én plan per skoledag: klær for kl 06–16, og hva som endrer seg kl 16–22
+// i dag og i morgen (begge visninger) + skoledager i 7-dagersvisningen får én plan for hele dagen
+function planDay(h) {
+  const now = new Date(), tm = new Date(now); tm.setDate(tm.getDate() + 1);
+  return sameDay(h.t, now) || sameDay(h.t, tm) || (state.view === "long" && schoolDay(h));
+}
+function dayPlan(hrs, i) {
+  const d0 = new Date(hrs[i].t), now = new Date();
+  let A, B;
+  if (sameDay(d0, now) && now.getHours() >= 16) { A = dayWindow(hrs, d0, now.getHours(), 24); B = []; }   // i dag etter kl 16: resten av dagen
+  else {
+    const fromH = sameDay(d0, now) ? Math.max(6, now.getHours()) : 6;
+    A = dayWindow(hrs, d0, fromH, 16); B = dayWindow(hrs, d0, 16, 22);
+  }
+  if (!A.length) return null;
+  const a = windowSummary(A, hrs[i]), b = B.length ? windowSummary(B, hrs[i]) : null;
+  const later = [];
+  if (b) {
+    if (b.level < a.level) later.push(`blir det kaldere, da trenger du ${NEED[b.level]}`);
+    else if (b.avg - a.avg >= 6) later.push("blir det varmere");   // varmere = minst 6 grader høyere
+    if (b.wet && !a.wet) later.push(b.key === "n10" ? "kommer det mye regn, husk regntøy" : "kommer det regn, husk paraply");
+    else if (b.wet && a.wet && b.key === "n10" && a.key !== "n10") later.push("regner det mer, husk regntøy");
+    else if (!b.wet && a.wet) later.push("blir det opphold");
+    if (b.snow && !a.snow) later.push("kommer det snø");
+  }
+  const txt = later.length ? "Senere på dagen " + later.join(", og så ") + "!" : "";
+  return { keyA: a.key, later: txt.replace(/^Senere på dagen (.*), og så (.*)!$/, "Senere på dagen $1. Så $2!") };
+}
+// regner det hele dagen? Timevarselet: alle timer kl 06–22 (resten av dagen hvis det er i dag).
+// 7 dager uten timevarsel: alle varselpunktene på dagtid.
+function rainAllDay(hrs, t) {
+  const now = new Date(), from = new Date(t); from.setHours(6, 0, 0, 0);
+  const to = new Date(t); to.setHours(22, 0, 0, 0);
+  const start = sameDay(t, now) && now > from ? now.getTime() - 3600e3 : +from;
+  const hourly = (state.allHours || []).filter(x => +x.t >= start && x.t < to);
+  const lastHourly = (state.allHours || []).length ? +state.allHours[state.allHours.length - 1].t : 0;
+  let pts = hourly.length >= 3 && lastHourly >= +to - 3600e3 ? hourly : null;
+  if (!pts) { const six = (state.long || []).filter(x => sameDay(x.t, t) && x.t.getHours() >= 6 && x.t.getHours() <= 21); pts = six.length >= 2 ? six : hourly.length >= 3 ? hourly : null; }
+  if (!pts) return null;
+  return pts.every(x => WET_TYPES.includes(x.type)) ? { heavy: pts.some(x => x.type === "heavy" || x.type === "thunder") } : null;
+}
+function outfitAt(hrs, i) {
+  const allRain = rainAllDay(hrs, hrs[i].t);
+  if (allRain) return allRain.heavy ? "n10" : "n01";   // regn hele dagen: regntøy hele dagen
+  if (planDay(hrs[i])) {
+    const plan = dayPlan(hrs, i);
+    if (plan) return plan.keyA;
+  }
+  if (state.view === "long") {
+    // 7 dager: ett bilde for hele dagen. Regn = paraply (regntøy hvis det regner hele dagen), ellers etter temperaturen på dagtid
+    const day = hrs.filter(x => sameDay(x.t, hrs[i].t));
+    const daytime = day.filter(x => x.t.getHours() >= 7 && x.t.getHours() <= 19);
+    const use = daytime.length ? daytime : day;
+    const avg = use.reduce((a, x) => a + x.temp, 0) / use.length;
+    const h = { ...hrs[i], temp: avg, feels: use.reduce((a, x) => a + x.feels, 0) / use.length,
+      wind: Math.max(...use.map(x => x.wind || 0)), gust: Math.max(...use.map(x => x.gust || 0)),
+      type: day.reduce((a, x) => (RANK.indexOf(x.type) > RANK.indexOf(a) ? x.type : a), "clear") };
+    // regn hele dagen (alle periodene på dagtid) = regntøy; regn av og til = paraply
+    const wetDay = daytime.length ? daytime : day;
+    if (h.type === "thunder" || h.type === "heavy") return "n10";
+    if (WET_TYPES.includes(h.type)) return wetDay.every(x => WET_TYPES.includes(x.type)) ? "n10" : "n01p";
+    return outfitFor(h);
+  }
+  const w2 = hrs.slice(i, i + 2), w4 = hrs.slice(i, i + 4);
+  const worst = w2.reduce((a, b) => (RANK.indexOf(b.type) > RANK.indexOf(a.type) ? b : a));
+  const h = { ...hrs[i],
+    temp: Math.min(...w2.map(x => x.temp)), feels: Math.min(...w2.map(x => x.feels)),
+    wind: Math.max(...w2.map(x => x.wind || 0)), gust: Math.max(...w2.map(x => x.gust || 0)), type: worst.type };
+  if (h.type === "thunder" || h.type === "heavy") return outfitFor(h);
+  if (WET_TYPES.includes(h.type)) {
+    // byger = regn, opphold, regn igjen innen 4 timer → paraply; ellers sammenhengende regn → regntøy
+    const flags = w4.map(x => (WET_TYPES.includes(x.type) ? "1" : "0")).join("");
+    return /10+1/.test(flags) ? "n01p" : "n01";
+  }
+  return outfitFor(h);
+}
 function outfitFor(h) {
   const t = Math.round(h.temp);          // samme tall som i boksen
   const wind = h.wind || 0;
@@ -569,7 +702,7 @@ const NEED = ["den tykkeste vinterjakka", "varm jakke, lue og votter", "vest og 
 // ser opptil 8 timer fram: blir det så kaldt at man trenger mer klær?
 function coolerLater(i) {
   const hrs = state.hours, now = warmLevel(hrs[i].temp);
-  for (let k = i + 1; k <= i + 8 && k < hrs.length; k++) {
+  for (let k = i + 1; k <= i + 8 && k < hrs.length && sameDay(hrs[k].t, hrs[i].t); k++) {
     const lv = warmLevel(hrs[k].temp);
     if (lv < now) {
       const hr = hrs[k].t.getHours();
@@ -606,7 +739,7 @@ function wmoType(code, precip) {
   if (code >= 95) return "thunder";
   if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
   if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-    if (code === 65 || code === 82 || precip >= 2) return "heavy";
+    if (precip > 2) return "heavy";
     if (precip >= 0.5 || code === 63 || code === 81) return "rain";
     return "light";
   }
@@ -620,9 +753,9 @@ function metType(sym, precip) {
   const c = sym || "";
   if (c.includes("thunder")) return "thunder";
   if (c.includes("snow") || c.includes("sleet")) return precip > 0 || !c.includes("showers") ? "snow" : "cloudy";
-  if (c.includes("heavyrain")) return "heavy";
+  if (c.includes("heavyrain")) return precip > 2 ? "heavy" : "rain";   // mye regn = mer enn 2 mm i timen
   if (c.includes("lightrain")) return "light";
-  if (c.includes("rain")) return precip >= 2 ? "heavy" : precip >= 0.5 ? "rain" : "light";
+  if (c.includes("rain")) return precip > 2 ? "heavy" : precip >= 0.5 ? "rain" : "light";
   if (c.startsWith("clearsky")) return "clear";
   if (c.startsWith("fair") || c.startsWith("partlycloudy")) return "partly";
   return "cloudy";
@@ -640,10 +773,22 @@ async function fetchMet(city) {
       if (!n1) break;                      // etter ca. 2,5 døgn kommer bare 6-timersverdier
       const p = n1.details.precipitation_amount || 0;
       hours.push({ t: new Date(t), temp: d.air_temperature, feels: d.apparent_air_temperature ?? d.air_temperature, precip: p,
-        type: metType(n1.summary.symbol_code, p), uv: d.ultraviolet_index_clear_sky || 0, wind: d.wind_speed || 0 });
-      if (hours.length === 25) break;
+        type: metType(n1.summary.symbol_code, p), uv: d.ultraviolet_index_clear_sky ?? null, wind: d.wind_speed || 0 });
     }
     if (hours.length < 25) throw new Error("met for kort");
+    const allHours = hours.splice(25);
+    hours.all = hours.concat(allHours);   // timevarsel så langt det finnes (brukes for «i morgen» i 7-dagersvisningen)
+    // 7 dager fram: én verdi hver 6. time (kl 00, 06, 12, 18 UTC) – langtidsvarselet fra ECMWF
+    const long = [];
+    for (const e of ts) {
+      const t = Date.parse(e.time), n6 = e.data.next_6_hours;
+      if (t + 3 * 3600e3 <= now || new Date(t).getUTCHours() % 6 || !n6) continue;
+      if (t > now + 7 * 864e5) break;
+      const d = e.data.instant.details, p = n6.details.precipitation_amount || 0;
+      long.push({ t: new Date(t), temp: d.air_temperature, feels: d.apparent_air_temperature ?? d.air_temperature, precip: p,
+        type: metType(n6.summary.symbol_code, p / 6), uv: d.ultraviolet_index_clear_sky ?? null, wind: d.wind_speed || 0, six: true });
+    }
+    if (long.length >= 12) hours.long = long;
     return hours;
   } finally { clearTimeout(tm); }
 }
@@ -701,9 +846,15 @@ async function load(city) {
     return;
   }
   if (city !== state.city) return;
-  state.hours = hours; state.live = true; state.sel = 0;
+  state.hours = hours; state.live = true; state.sel = 0; state.uvKey = null;
+  state.long = hours.long || null;
+  state.allHours = hours.all || hours;
+  state.view = "day";   // nytt sted: start alltid med neste 24 timer
+  if (!state.long) state.view = "day";
+  $("#viewBtn").hidden = !state.long;
+  setViewButton();
   const ml = $("#modelLabel");
-  ml.textContent = hours.src === "om" ? "Varsel: Open-Meteo" : inMeps(city) ? "Varsel: MET · MEPS 2,5 km" : "Varsel: MET · ECMWF 9 km";
+  ml.textContent = state.view === "long" ? "Varsel 7 dager: MET · ECMWF 9 km" : hours.src === "om" ? "Varsel: Open-Meteo" : inMeps(city) ? "Varsel: MET · MEPS 2,5 km" : "Varsel: MET · ECMWF 9 km";
   ml.title = hours.src === "om" ? "MET svarte ikke, så varselet kommer fra Open-Meteo" : inMeps(city) ? "Nordisk høyoppløselig modell (MEPS), samme som Yr bruker" : "Utenfor Norden bruker MET den europeiske modellen ECMWF med 9 km oppløsning";
   meteo.classList.remove("loading"); $("#uv").hidden = false;
   renderUV();
@@ -723,13 +874,27 @@ function catmull(pts) {
   }
   return d;
 }
+// hvilken serie meteogrammet viser: neste 24 timer (time for time) eller 7 dager (hver 6. time)
+state.view = "day";
+const series = () => (state.view === "long" && state.long ? state.long : state.hours);
+const DAYS = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"];
+const DAYS_SHORT = ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"];
+function setViewButton() {
+  const b = $("#viewBtn"), long = state.view === "long";
+  b.textContent = long ? "← Neste 24 timer" : "Været fremover →";
+  b.setAttribute("aria-pressed", long);
+  $("#precipLegend").textContent = long ? "Nedbør (mm per 6 t)" : "Nedbør (mm)";
+  const ml = $("#modelLabel");
+  if (long) ml.textContent = "Varsel 7 dager: MET · ECMWF 9 km";
+  else if (state.hours.length) ml.textContent = state.hours.src === "om" ? "Varsel: Open-Meteo" : inMeps(state.city) ? "Varsel: MET · MEPS 2,5 km" : "Varsel: MET · ECMWF 9 km";
+}
 function renderChart() {
   const chart = $("#chart");
   const W = chart.clientWidth, small = W < 560;
   const H = small ? 236 : 300;
   const m = { l: small ? 34 : 62, r: small ? 26 : 50, t: small ? 26 : 34, b: small ? 46 : 64 };
   const pw = W - m.l - m.r, ph = H - m.t - m.b;
-  const hrs = state.hours, n = hrs.length;
+  const hrs = series(), n = hrs.length, long = state.view === "long";
   const x = i => m.l + i / (n - 1) * pw;
   const temps = hrs.map(h => h.temp);
   const lo = Math.min(...temps), hi = Math.max(...temps);
@@ -764,15 +929,62 @@ function renderChart() {
   // nedbør
   const bw = pw / (n - 1) * 0.74;
   g += `<defs><linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd8ff"/><stop offset="1" stop-color="#2ea6f3"/></linearGradient></defs>`;
-  hrs.forEach((h, i) => {
-    if (h.precip <= 0) return;
-    const top = yp(Math.min(h.precip, pMax)), bx = clamp(x(i) - bw / 2, m.l, m.l + pw - bw);
-    g += `<rect x="${bx.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${(m.t + ph - top).toFixed(1)}" rx="1.5" fill="url(#gBar)" stroke="#1d8fe0" stroke-width=".8"/>`;
-  });
+  const bar = (bx, bwi, amount) => {
+    const top = yp(Math.min(amount, pMax));
+    g += `<rect x="${bx.toFixed(1)}" y="${top.toFixed(1)}" width="${bwi.toFixed(1)}" height="${(m.t + ph - top).toFixed(1)}" rx="1.5" fill="url(#gBar)" stroke="#1d8fe0" stroke-width=".8"/>`;
+  };
+  if (!long) {
+    hrs.forEach((h, i) => { if (h.precip > 0) bar(clamp(x(i) - bw / 2, m.l, m.l + pw - bw), bw, h.precip); });
+  } else {
+    // 7 dager: søylene står i faste 6-timersperioder i norsk tid (00–06, 06–12, 12–18, 18–24).
+    // Der timevarselet (MEPS) finnes, summeres timene i perioden. Lenger fram brukes MET sin 6-timersverdi,
+    // flyttet til nærmeste periode (kl 01–07 vintertid → 00–06).
+    const t0 = +hrs[0].t, t1 = +hrs[n - 1].t, HOUR = 3600e3;
+    const xt = t => m.l + (t - t0) / (t1 - t0) * pw;
+    const hourly = state.allHours || [], lastHourly = hourly.length ? +hourly[hourly.length - 1].t : 0;
+    const start = new Date(t0 - 6 * HOUR); start.setHours(Math.floor(start.getHours() / 6) * 6, 0, 0, 0);
+    for (let b0 = +start; b0 < t1; ) {
+      const nb = new Date(b0); nb.setHours(nb.getHours() + 6); const b1 = +nb;
+      let amount = null;
+      if (hourly.length && +hourly[0].t <= b0 && lastHourly >= b1 - HOUR) {
+        amount = hourly.filter(x => +x.t >= b0 && +x.t < b1).reduce((a, x) => a + x.precip, 0);
+      } else {
+        const src = hrs.find(x => Math.abs(+x.t - b0) <= 2.5 * HOUR);
+        if (src) amount = src.precip;
+      }
+      const xa = Math.max(xt(b0), m.l), xb = Math.min(xt(b1), m.l + pw), gap = (xt(b1) - xt(b0)) * 0.08;
+      if (amount >= 0.1 && xb - xa > 2 * gap + 1) bar(xa + gap, xb - xa - 2 * gap, Math.round(amount * 10) / 10);
+      b0 = b1;
+    }
+  }
   // akser
   g += `<path d="M${m.l} ${m.t - 6}V${m.t + ph}H${m.l + pw}V${m.t - 6}" fill="none" stroke="var(--axis)" stroke-width="1.6"/>`;
-  // x-etiketter: klokkeslett på øverste linje, dagen (I dag / I morgen) under
   const now = new Date();
+  if (long) {
+    // 7 dager: skillelinje ved midnatt og dagnavn midt på hver dag
+    const fsL = small ? 11.5 : 18, yTop = m.t + ph + (small ? 22 : 32);
+    for (let i = 1; i < n; i++) {
+      const a = hrs[i - 1].t, b = hrs[i].t;
+      if (a.getDate() !== b.getDate()) {
+        const mid = new Date(b); mid.setHours(0, 0, 0, 0);
+        const f = (mid - a) / (b - a), xm = x(i - 1) + f * (x(i) - x(i - 1));
+        g += `<path d="M${xm.toFixed(1)} ${m.t}V${m.t + ph + 8}" stroke="var(--grid)" stroke-width="1.5"/>`;
+      }
+    }
+    const byDay = {};
+    hrs.forEach((h, i) => { const k = h.t.toDateString(), d = Math.abs(h.t.getHours() + h.t.getMinutes() / 60 - 13); if (!byDay[k] || d < byDay[k].d) byDay[k] = { i, d }; });
+    // gå bakfra, så det er «i dag» som viker hvis det bare er litt igjen av dagen
+    let lastX = 1e9; const minGap = small ? 24 : 70;
+    Object.values(byDay).sort((p, q) => q.i - p.i).forEach(({ i }) => {
+      if (lastX - x(i) < minGap) return;
+      lastX = x(i);
+      const h = hrs[i], today = sameDay(h.t, now), tm = new Date(now); tm.setDate(tm.getDate() + 1);
+      const lab = today ? "I dag" : sameDay(h.t, tm) && !small ? "I morgen" : DAYS_SHORT[h.t.getDay()];
+      g += `<text x="${x(i)}" y="${yTop}" text-anchor="middle" font-size="${fsL}">${lab}</text>`;
+      if (!small) g += `<text x="${x(i)}" y="${yTop + fsL + 4}" text-anchor="middle" font-size="${(fsL * 0.8).toFixed(1)}" style="fill:#2f5fc8">${h.t.getDate()}.</text>`;
+    });
+  } else {
+  // x-etiketter: klokkeslett på øverste linje, dagen (I dag / I morgen) under
   const fs = small ? 11.5 : 19, gapMin = small ? 34 : 58;
   const must = [0];
   hrs.forEach((h, i) => { if (i > 0 && h.t.getHours() === 0) must.push(i); });
@@ -795,6 +1007,7 @@ function renderChart() {
     const day = i === 0 ? (startDayOk ? (sameDay(h.t, now) ? "I dag" : "I morgen") : "") : hr === 0 ? "I morgen" : "";
     if (day) g += `<text x="${x(i)}" y="${yTop + fs + 4}" text-anchor="middle" font-size="${(fs * 0.85).toFixed(1)}" style="fill:#2f5fc8">${day}</text>`;
   });
+  }
   // temperaturkurve
   const pts = hrs.map((h, i) => [x(i), y(h.temp)]);
   // rød over 0 °C, blå under, med skarpt skifte ved nullstreken
@@ -811,20 +1024,52 @@ function renderChart() {
   svg.innerHTML = g;
   chart.setAttribute("aria-valuemax", n - 1);
 
-  // symbolrad: én per 3-timersblokk
-  const symW = small ? 46 : 84;
+  // symbolrad: 8 blokker for neste døgn, eller ett symbol per halvdøgn (PC) / døgn (mobil) for 7 dager
+  const K = long ? (small ? 7 : 14) : 8, per = long ? Math.round(n / K) : 3;
+  state.symK = K; state.symPer = per;
+  const symW = long && !small ? 70 : small ? 46 : 84;
   let sh = "";
-  for (let k = 0; k < 8; k++) {
-    const block = hrs.slice(k * 3, k * 3 + 3);
+  for (let k = 0; k < K; k++) {
+    const block = hrs.slice(k * per, k * per + per);
+    if (!block.length) break;
     const rank = ["clear", "partly", "cloudy", "snow", "light", "rain", "heavy", "thunder"];
     const type = block.reduce((a, b) => (rank.indexOf(b.type) > rank.indexOf(a) ? b.type : a), block[1] ? block[1].type : block[0].type);
-    const cx = x(k * 3 + 1);
+    const cx = x(Math.min(n - 1, k * per + (per - 1) / 2));
     sh += `<div class="sym" data-k="${k}" style="left:${(cx - symW / 2).toFixed(1)}px">${symbolSVG(type)}</div>`;
   }
   $("#symbols").innerHTML = sh;
   renderSel();
 }
 
+// solhøyde i grader (forenklet, nøyaktig nok til å finne soloppgang og solnedgang)
+function sunElevation(t, lat, lon) {
+  const d = t / 864e5 - 10957.5;                       // døgn siden 1.1.2000 kl 12 UTC
+  const g = (357.529 + 0.98560028 * d) * Math.PI / 180;
+  const q = 280.459 + 0.98564736 * d;
+  const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * Math.PI / 180;
+  const e = (23.439 - 0.00000036 * d) * Math.PI / 180;
+  const dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L));
+  const gmst = (18.697374558 + 24.06570982441908 * d) % 24;
+  const ha = ((gmst * 15 + lon) * Math.PI / 180) - ra;
+  const la = lat * Math.PI / 180;
+  return Math.asin(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(ha)) * 180 / Math.PI;
+}
+// månefase 0–1 (0 = nymåne, 0,5 = fullmåne)
+function moonPhase(t) {
+  const syn = 29.530588853, ref = Date.UTC(2000, 0, 6, 18, 14);
+  return (((t - ref) / 864e5 / syn) % 1 + 1) % 1;
+}
+// gul måne med riktig form (voksende lyser på høyre side, minkende på venstre)
+function moonSVG(ph, sz) {
+  const r = 10, c = 12, k = Math.cos(ph * 2 * Math.PI);   // 1 ved nymåne, -1 ved fullmåne
+  const rx = Math.abs(k) * r, waxing = ph < 0.5;
+  // lys del: halvsirkel på den lyse siden + ellipsebue for terminatoren
+  const outer = waxing ? 1 : 0, term = waxing ? (k > 0 ? 0 : 1) : (k > 0 ? 1 : 0);
+  const lit = `M${c} ${c - r}A${r} ${r} 0 0 ${outer} ${c} ${c + r}A${rx.toFixed(2)} ${r} 0 0 ${term} ${c} ${c - r}Z`;
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24"><circle cx="${c}" cy="${c}" r="${r}" fill="#d9dce8" opacity=".55"/>` +
+         `<path d="${lit}" fill="#ffd84a" stroke="#e0a800" stroke-width=".8"/></svg>`;
+}
 function whenWords(h, i) {
   const now = new Date(), hr = h.t.getHours(), today = sameDay(h.t, now);
   if (i === 0) return "Akkurat nå";
@@ -837,14 +1082,30 @@ function whenWords(h, i) {
 function renderSel() {
   if (!geo) return;
   const { m, ph, x, y, W, small } = geo;
-  const i = state.sel, h = state.hours[i];
+  const hrs = series(), long = state.view === "long";
+  const i = Math.min(state.sel, hrs.length - 1), h = hrs[i];
   const px = x(i), py = y(h.temp);
   const tip = $("#tip");
   const now = new Date();
-  $("#tipWhen").textContent = `${sameDay(h.t, now) ? "I dag" : "I morgen"} kl ${pad(h.t.getHours())}`;
+  const tmw = new Date(now); tmw.setDate(tmw.getDate() + 1);
+  const dayName = sameDay(h.t, now) ? "I dag" : sameDay(h.t, tmw) ? "I morgen" : DAYS[h.t.getDay()][0].toUpperCase() + DAYS[h.t.getDay()].slice(1);
+  $("#tipWhen").textContent = `${dayName} kl ${pad(h.t.getHours())}`;
   $("#tipTemp").textContent = `${fmt(h.temp)} °C`;
-  $("#tipFeels").textContent = `Følt temperatur: ${fmt(h.feels)} °C`;
-  $("#tipWx").textContent = WX_NAME[h.type] + (h.precip > 0 ? ` · ${String(h.precip).replace(".", ",")} mm` : "") + ((h.wind || 0) >= 8 ? ` · vind ${Math.round(h.wind)} m/s` : "");
+  $("#tipFeels").textContent = `føles ${fmt(h.feels)}°`;
+  // natt (kl 22–06): vis månen slik den ser ut den natten
+  const hrNow = h.t.getHours();
+  // soloppgang og solnedgang: dus rosa nederst mot lys blå øverst
+  const el = sunElevation(h.t, state.city.lat, state.city.lon);
+  $("#tipMoon").innerHTML = !long && el <= -7 ? moonSVG(moonPhase(h.t), small ? 18 : 24) : "";   // månen når det er mørkt
+  // soloppgang/solnedgang: dus rosa nederst mot lys blå; mørkt: dus blå. Ikke i 7-dagersvisningen.
+  const dusk = !long && el > -7 && el < 6, dark = !long && el <= -7;
+  tip.style.setProperty("--tip-bg", dusk ? "linear-gradient(to top, #fcdde7 0%, #fbeef3 45%, #e6f1ff 100%)" : dark ? "linear-gradient(to top, #dfe8f7, #e9effa)" : "#fbfdff");
+  tip.style.setProperty("--tip-tail", dusk ? "#fcdde7" : dark ? "#dfe8f7" : "#fbfdff");
+  // snø i cm (1 mm nedbør ≈ 1 cm snø), regn i mm
+  const amt = h.precip > 0 ? (h.type === "snow" ? `${String(Math.round(h.precip * 10) / 10).replace(".", ",")} cm` : `${String(h.precip).replace(".", ",")} mm`) : "";
+  $("#tipWx").textContent = WX_NAME[h.type] + (amt ? ` ${amt}` : "");
+  const gustTxt = (h.gust || 0) > 18 ? ` (kast ${Math.round(h.gust)})` : "";
+  $("#tipWind").textContent = (h.wind || 0) >= 1 ? `Vind ${Math.round(h.wind)} m/s${gustTxt}` : "";
   const tw = tip.offsetWidth, th = tip.offsetHeight;
   const left = clamp(px - tw / 2, 0, W - tw);
   let top = py - th - (small ? 16 : 24), below = false;
@@ -860,11 +1121,12 @@ function renderSel() {
     `<path d="M${px} ${m.t + ph}v${small ? 6 : 9}" stroke="#2f5fc8" stroke-width="2" stroke-dasharray="5 4"/>` +
     `<circle cx="${px}" cy="${py}" r="${small ? 6 : 8.5}" fill="#fff" stroke="${h.temp < 0 ? "#1f6fe0" : "var(--line)"}" stroke-width="3"/>`;
   $("#chart").setAttribute("aria-valuenow", i);
+  if (state.uvKey !== h.t.toDateString()) { state.uvKey = h.t.toDateString(); renderUV(h); }
   $("#chart").setAttribute("aria-valuetext", `${$("#tipWhen").textContent}, ${fmt(h.temp)} grader, føles som ${fmt(h.feels)}, ${WX_NAME[h.type]}`);
-  document.querySelectorAll(".sym").forEach(el => el.classList.toggle("on", +el.dataset.k === Math.min(7, Math.floor(i / 3))));
+  document.querySelectorAll(".sym").forEach(el => el.classList.toggle("on", +el.dataset.k === Math.min(state.symK - 1, Math.floor(i / state.symPer))));
 
   // jenta + boble
-  const key = outfitFor(h);
+  const key = outfitAt(hrs, i);
   const girl = $("#girl"), bubble = $("#bubble");
   if (key !== state.outfit) {
     showGirl(key);
@@ -872,20 +1134,51 @@ function renderSel() {
     state.outfit = key;
   }
   let extra = "";
-  if (h.type === "thunder") extra = "Det tordner, så hold deg gjerne inne!";
+  const rainWind = ["light", "rain", "heavy", "thunder"].includes(h.type) && (h.wind || 0) > 10;
+  if (rainWind) extra = h.type === "thunder" ? "Det tordner, regner og blåser mye!" : h.type === "heavy" ? "Det regner og blåser mye!" : "Det regner, og det blåser mye!";
+  else if (h.type === "thunder") extra = "Det tordner, så hold deg gjerne inne!";
   else if (h.type === "heavy") extra = "Det regner mye nå.";
   else if (h.type === "snow") extra = "Det snør! Perfekt for snømann.";
-  else if (coolerLater(i)) extra = coolerLater(i);
+  else if (!long && !planDay(h) && coolerLater(i)) extra = coolerLater(i);
   else if (key === "n09") extra = `Vinden er ${Math.round(h.wind)} m/s.`;
   else if ((key === "n07" || key === "n08") && h.uv >= 3) extra = "Husk solkrem og vann!";
   else if (key === "n08") extra = "Husk vannflaske!";
+  // 7 dager: regnbeskjeden gjelder hele dagen, så den ikke skifter fra punkt til punkt
+  if (long && !extra.startsWith("Nå er det")) {
+    const day = hrs.filter(x => sameDay(x.t, h.t)), wetPts = day.filter(x => ["light", "rain", "heavy", "thunder"].includes(x.type));
+    const total = wetPts.reduce((a, x) => a + x.precip, 0), windy = Math.max(...day.map(x => x.wind || 0)) > 10;
+    if (/regner|tordner/.test(extra)) extra = "";
+    if (total >= 10) extra = windy ? "Det regner og blåser mye!" : "Det regner mye!";
+    else if (wetPts.length && windy) extra = "Det regner, og det blåser mye!";
+    if (/snør/.test(extra)) extra = "";
+    if (!extra && day.some(x => x.type === "snow")) extra = "Det snør! Perfekt for snømann.";
+  }
   // natt (kl 22–06): hun minner om at man helst bør sove, men gir klesrådet likevel
   const hr = h.t.getHours(), night = hr >= 22 || hr < 6;
-  let main = FIG_TEXT[key].say(whenWords(h, i));
-  if (night) {
-    const rest = key === "n09" ? "trenger du <b>vindjakke og skjerf</b>, for det blåser!" : FIG_TEXT[key].say("").trim();
+  const isToday = sameDay(h.t, new Date());
+  let main = FIG_TEXT[key].say(isToday ? (long ? "I dag" : "Akkurat nå") : dayName === "I morgen" ? "I morgen" : long ? "På " + DAYS[h.t.getDay()] : whenWords(h, i));
+  // én boble per dag: klær for dagen (kl 06–16), og i rødt hva som endrer seg senere (kl 16–22)
+  if (planDay(h)) { const plan = dayPlan(hrs, i); if (plan && plan.later) extra = plan.later + (extra && !/regner|snør|tordner/.test(extra) ? " " + extra : ""); }
+  const allRain = rainAllDay(hrs, h.t);
+  if (allRain) {
+    // regn hele dagen: samme beskjed hele dagen, uansett time
+    const dw = sameDay(h.t, new Date()) ? "I dag" : dayName === "I morgen" ? "I morgen" : "På " + DAYS[h.t.getDay()];
+    main = `${dw} regner det hele dagen. Det er lurt med <b>regntøy</b>.`;
+    if (/kjøligere|Senere på dagen/.test(extra)) extra = "";
+  } else if (night && !long) {
+    const rest = key === "n09" ? "trenger du <b>vindjakke og skjerf</b>, for det blåser!" : key === "n01p" ? "ta med <b>paraply</b>, for det kommer litt regn innimellom!" : FIG_TEXT[key].say("").trim();
     main = `I natt bør du helst sove! Men hvis du må ut og reise, ${rest}`;
+    extra = "";   // ingen rød tekst om natta (kl 22–06)
   }
+  // 7 dager: i morgen samme klær som i dag → kort beskjed (gjelder bare i morgen)
+  if (long && dayName === "I morgen") {
+    const prevDay = new Date(h.t); prevDay.setDate(prevDay.getDate() - 1);
+    const pi = hrs.findIndex(x => sameDay(x.t, prevDay));
+    if (pi >= 0 && outfitAt(hrs, pi) === key) {
+      main = "I morgen kan du ha på deg <b>det samme</b>.";
+    }
+  }
+  if (!sameDay(h.t, new Date()) && !(night && !long)) main = main.replace("bør du ha på deg", "kan du ha på deg");   // fram i tid: et forslag, ikke et råd
   const html = `<span>${main}</span>` + (extra ? `<small>${extra}</small>` : "");
   bubble.classList.toggle("long", (main.replace(/<[^>]+>/g, "") + extra).length > 85);
   if (bubble.classList.contains("talk") && !state.selMoved) return;
@@ -1208,21 +1501,44 @@ function startRadar() {
 }
 
 /* ======================= UV ======================= */
-function renderUV() {
-  const today = state.hours.filter(h => sameDay(h.t, state.hours[0].t));
-  const pool = today.length > 3 ? today : state.hours;
-  const uv = Math.round(Math.max(...pool.map(h => h.uv)));
-  const lv = uv <= 2 ? ["lav", "#217a1d", "#62d655", "Du trenger ikke solkrem i dag.", "#f2fbef", "#ddf3e3"]
-    : uv <= 5 ? ["moderat", "#9a6a00", "#ffd84a", "Bruk solkrem midt på dagen.", "#fffbe8", "#fff0bf"]
-    : uv <= 7 ? ["høy", "#c2510b", "#ffa04a", "Husk solkrem, solhatt og skygge!", "#fff4e8", "#ffe0c2"]
-    : uv <= 10 ? ["svært høy", "#b3171f", "#ff6a6a", "Hold deg i skyggen midt på dagen og bruk mye solkrem!", "#fff0ef", "#ffd6d3"]
-    : ["ekstrem", "#6b1fa6", "#b36bff", "Hold deg inne eller i skyggen midt på dagen!", "#f7efff", "#e6d4ff"];
+// dato for et tidspunkt i stedets egen tidssone (norsk tid for steder uten kjent tidssone)
+function dayKey(t) {
+  const tz = state.city && state.city.tz;
+  if (tz) { try { return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(t); } catch {} }
+  return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+}
+const MONTHS = ["jan.", "feb.", "mars", "april", "mai", "juni", "juli", "aug.", "sep.", "okt.", "nov.", "des."];
+// UV-boksen følger dagen man står på i meteogrammet: høyeste UV den dagen (i stedets egen tid)
+function renderUV(sel) {
+  // samme dag som meteogrammet viser (kl 12 norsk tid den dagen), regnet om til stedets egen dato
+  const ref = new Date(sel ? sel.t : Date.now()); ref.setHours(12, 0, 0, 0);
+  const key = dayKey(ref);
+  const all = (state.allHours || state.hours).concat((state.long || []).filter(x => !state.allHours || x.t > state.allHours[state.allHours.length - 1].t));
+  let pool = all.filter(x => dayKey(x.t) === key);
+  if (!pool.length) pool = state.hours.slice(0, 24);
+  const known = pool.filter(h => h.uv != null);
+  const uv = Math.round(Math.max(0, ...known.map(h => h.uv)));
+  const now = new Date(), tm = new Date(now); tm.setDate(tm.getDate() + 1);
+  const label = sameDay(ref, now) ? "I dag" : sameDay(ref, tm) ? "I morgen"
+    : `${DAYS[ref.getDay()][0].toUpperCase() + DAYS[ref.getDay()].slice(1)} ${ref.getDate()}. ${MONTHS[ref.getMonth()]}`;
+  const d = label === "I dag" ? "i dag" : label === "I morgen" ? "i morgen" : "på " + DAYS[ref.getDay()];
+  const lv = uv <= 2 ? ["lav", "#217a1d", "#62d655", `Du trenger ikke solkrem ${d}.`, "#f2fbef", "#ddf3e3"]
+    : uv <= 5 ? ["moderat", "#9a6a00", "#ffd84a", `Bruk solkrem midt på dagen ${d}.`, "#fffbe8", "#fff0bf"]
+    : uv <= 7 ? ["høy", "#c2510b", "#ffa04a", `Husk solkrem, solhatt og skygge ${d}!`, "#fff4e8", "#ffe0c2"]
+    : uv <= 10 ? ["svært høy", "#b3171f", "#ff6a6a", `Hold deg i skyggen midt på dagen ${d}, og bruk mye solkrem!`, "#fff0ef", "#ffd6d3"]
+    : ["ekstrem", "#6b1fa6", "#b36bff", `Hold deg inne eller i skyggen midt på dagen ${d}!`, "#f7efff", "#e6d4ff"];
   const box = $("#uv");
   box.style.setProperty("--uvc", lv[1]); box.style.setProperty("--uvl", lv[2]);
   box.style.background = `linear-gradient(135deg, ${lv[4]}, ${lv[5]})`;
   $("#uvLevel").textContent = "UV " + lv[0];
   $("#uvNum").textContent = uv;
   $("#uvText").textContent = lv[3];
+  if (!known.length) {   // MET gir bare UV for de nærmeste ca. 3 dagene
+    box.style.setProperty("--uvc", "#5a6a8a"); box.style.setProperty("--uvl", "#9aa8c4");
+    box.style.background = "linear-gradient(135deg, #f3f6fb, #e4eaf4)";
+    $("#uvLevel").textContent = "UV"; $("#uvNum").textContent = "–";
+    $("#uvText").textContent = `Det finnes ikke UV-varsel ${d} ennå.`;
+  }
 }
 
 /* ======================= Kart (Natural Earth-data, Web Mercator) ======================= */
@@ -1436,12 +1752,12 @@ chartEl.addEventListener("pointerdown", e => {
   if (!geo) return; dragging = true; chartEl.classList.add("drag");
   chartEl.setPointerCapture(e.pointerId); setSel(idxFromEvent(e));
 });
-chartEl.addEventListener("pointermove", e => { if (dragging) setSel(idxFromEvent(e)); });
+chartEl.addEventListener("pointermove", e => { if (dragging || e.pointerType === "mouse") setSel(idxFromEvent(e)); });   // mus: følg pekeren uten å klikke
 const endDrag = () => { dragging = false; chartEl.classList.remove("drag"); };
 chartEl.addEventListener("pointerup", endDrag);
 chartEl.addEventListener("pointercancel", endDrag);
 chartEl.addEventListener("keydown", e => {
-  const n = state.hours.length;
+  const n = series().length;
   const map = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -3, PageUp: 3 };
   if (e.key in map) { setSel(clamp(state.sel + map[e.key], 0, n - 1)); e.preventDefault(); }
   if (e.key === "Home") { setSel(0); e.preventDefault(); }
@@ -1468,7 +1784,7 @@ $("#favBtn").addEventListener("click", () => {
   const c = state.city;
   try {
     if (isFav(c)) localStorage.removeItem("vaer-favoritt");
-    else localStorage.setItem("vaer-favoritt", JSON.stringify({ name: c.name, lat: c.lat, lon: c.lon, coast: c.coast, region: c.region }));
+    else localStorage.setItem("vaer-favoritt", JSON.stringify({ name: c.name, lat: c.lat, lon: c.lon, coast: c.coast, region: c.region, tz: c.tz }));
   } catch {}
   updateFav();
   const b = $("#favBtn"); if (!reduceMotion) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
@@ -1486,7 +1802,7 @@ async function geocode(text) {
   try {
     const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(text)}&count=6&language=nb&format=json`, { signal: ctl.signal });
     const j = await r.json();
-    return (j.results || []).map(x => ({ name: x.name, lat: x.latitude, lon: x.longitude, coast: hash(x.name) % 2 === 0, region: [x.admin1, x.country].filter(Boolean).join(", ") }));
+    return (j.results || []).map(x => ({ name: x.name, lat: x.latitude, lon: x.longitude, coast: hash(x.name) % 2 === 0, region: [x.admin1, x.country].filter(Boolean).join(", "), tz: x.timezone }));
   } finally { clearTimeout(tm); }
 }
 q.addEventListener("input", () => {
@@ -1533,6 +1849,11 @@ $("#searchForm").addEventListener("submit", async e => {
   msg.hidden = false;
 });
 
+$("#viewBtn").addEventListener("click", () => {
+  state.view = state.view === "long" ? "day" : "long";
+  state.sel = 0; state.selMoved = true;
+  setViewButton(); renderChart();
+});
 $("#retry").addEventListener("click", () => { state.netOk = true; state.ncOk = true; load(state.city); });
 
 // oppstart
