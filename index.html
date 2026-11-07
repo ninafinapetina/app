@@ -328,8 +328,6 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   .hero-sun .rays, .girl.swap .fit, .bubble.pop { animation: none; }
 }
-/* rød tekst følger størrelsen på resten av boblen (også når boblen krymper skriften) */
-.bubble small { font-size: 0.66em !important; line-height: 1.25; }
 </style>
 
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -715,25 +713,24 @@ function coolerLater(i) {
   return "";
 }
 // sørg for at all tekst ligger innenfor den ovale snakkeboblen: gjør boblen høyere, og skriften mindre ved behov
+// sørg for at all tekst ligger innenfor den ovale snakkeboblen. Skriften beholder størrelsen;
+// boblen gjøres høyere (og teksten litt smalere) til alt får plass.
 function fitBubble() {
   const b = $("#bubble"); if (!b || !b.children.length) return;
-  b.style.paddingTop = b.style.paddingBottom = b.style.fontSize = "";
-  const base = parseFloat(getComputedStyle(b).fontSize), padY0 = parseFloat(getComputedStyle(b).paddingTop);
-  let fs = base, padY = padY0;
-  for (let k = 0; k < 24; k++) {
+  b.style.paddingTop = b.style.paddingBottom = b.style.paddingLeft = b.style.paddingRight = "";
+  const cs = getComputedStyle(b);
+  let padY = parseFloat(cs.paddingTop), padX = parseFloat(cs.paddingLeft);
+  for (let k = 0; k < 40; k++) {
     const r = b.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     const a = r.width / 2 - 6, bb = r.height / 2 - 6;
     let worst = 0, wx = 0;
-    for (const el of b.children) {
-      for (const q of el.getClientRects()) {
-        for (const [x, y] of [[q.left, q.top], [q.right, q.top], [q.left, q.bottom], [q.right, q.bottom]]) {
-          const v = ((x - cx) / a) ** 2 + ((y - cy) / bb) ** 2;
-          if (v > worst) { worst = v; wx = Math.abs(x - cx) / a; }
-        }
+    for (const el of b.children) for (const q of el.getClientRects())
+      for (const [x, y] of [[q.left, q.top], [q.right, q.top], [q.left, q.bottom], [q.right, q.bottom]]) {
+        const v = ((x - cx) / a) ** 2 + ((y - cy) / bb) ** 2;
+        if (v > worst) { worst = v; wx = Math.abs(x - cx) / a; }
       }
-    }
     if (worst <= 1) break;
-    if (wx > 0.86 && fs > base * 0.7) { fs *= 0.94; b.style.fontSize = fs + "px"; }
+    if (wx > 0.86 && padX < r.width * 0.3) { padX += 4; b.style.paddingLeft = b.style.paddingRight = padX + "px"; }
     else { padY += 6; b.style.paddingTop = b.style.paddingBottom = padY + "px"; }
   }
 }
