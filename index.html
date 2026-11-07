@@ -1118,7 +1118,8 @@ function renderSel() {
   const now = new Date();
   const tmw = new Date(now); tmw.setDate(tmw.getDate() + 1);
   const dayName = sameDay(h.t, now) ? "I dag" : sameDay(h.t, tmw) ? "I morgen" : DAYS[h.t.getDay()][0].toUpperCase() + DAYS[h.t.getDay()].slice(1);
-  $("#tipWhen").textContent = `${dayName} kl ${pad(h.t.getHours())}`;
+  // natt etter midnatt (kl 00–06 i morgen) heter «I natt» i infoboksen
+  $("#tipWhen").textContent = `${dayName === "I morgen" && h.t.getHours() < 6 ? "I natt" : dayName} kl ${pad(h.t.getHours())}`;
   $("#tipTemp").textContent = `${fmt(h.temp)} °C`;
   $("#tipFeels").textContent = `føles ${fmt(h.feels)}°`;
   // natt (kl 22–06): vis månen slik den ser ut den natten
