@@ -360,6 +360,8 @@ h1 {
 @media (max-width: 360px) { .legend { font-size: 0.76rem; gap: 6px 8px; } .legend .l-line { width: 18px; } .legend .l-bar { width: 16px; } }
 .bubble .bday { display: block; font: inherit; color: inherit; }
 .bubble .lead1 { white-space: nowrap; }
+.bubble br.mbr { display: none; }
+@media (max-width: 560px) { .bubble br.mbr { display: inline; } }
 </style>
 
 <canvas id="sky" aria-hidden="true"></canvas>
@@ -1349,7 +1351,7 @@ function renderSel() {
     main = `${dw} regner det hele dagen. Det er lurt med <b>regntøy${cold ? " og varme klær under" : ""}</b>.`;
     if (/kjøligere|Senere på dagen/.test(extra)) extra = "";
   } else if (night && !long) {
-    const rest = P.allWet ? "bør du ha på deg <b>regntøy</b>, for det regner!" : key === "n09" ? "trenger du <b>vindjakke og skjerf</b>, for det blåser!" : key === "n01p" ? "ta med <b>paraply</b>, for det kommer litt regn innimellom!" : FIG_TEXT[key].say("").trim();
+    const rest = P.allWet ? (coldDay(hrs, h.t) ? "bør du ha på deg <b>regntøy og varme klær under</b>!" : "bør du ha på deg <b>regntøy</b>!") : key === "n09" ? "trenger du <b>vindjakke og skjerf</b>, for det blåser!" : key === "n01p" ? "ta med <b>paraply</b>, for det kommer litt regn innimellom!" : FIG_TEXT[key].say("").trim();
     main = `I natt bør du helst sove! Men hvis du må ut og reise, ${rest}`;
     // om natta: bare rød tekst om regn og sterk vind
     extra = (extra.match(/Det (tordner, regner og blåser|regner og blåser|regner, og det blåser) mye!/) || [""])[0];
@@ -1385,6 +1387,8 @@ function renderSel() {
   // dagen øverst i boblen på egen linje, så fortsetter setningen («I dag» / «bør du ha på deg …»)
   const dm = main.match(/^(I dag|I morgen kveld|I morgen tidlig|I morgen|I natt|I kveld|Akkurat nå|På \S+) /);
   if (dm) main = `<em class="bday">${dm[1]}</em>${main.slice(dm[0].length)}`;
+  // mobil: «Det regner og» / «blåser mye!» på hver sin linje
+  extra = extra.replace(/(Det (?:tordner, )?regner og) (blåser mye!)/, '$1<br class="mbr"> $2');
   const html = `<span>${main}</span>` + (extra ? `<small>${extra}</small>` : "") + (state.cocoa ? `<small class="cocoa">Best med kakao og film inne!</small><img class="cocoa-img" src="${COCOA_IMG}" alt="Kopp med varm kakao">` : "");
   bubble.classList.toggle("night", /^<em class="bday">I natt/.test(main));
   bubble.classList.toggle("long", (main.replace(/<[^>]+>/g, "") + extra).length > 85);
