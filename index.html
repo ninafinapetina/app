@@ -1,4 +1,7 @@
+<!doctype html>
+<html lang="nb" translate="no">
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -172,7 +175,8 @@ h1 {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 40'%3E%3Cpath d='M0 5C16 9 31 14 48 21C31 24 16 29 0 35Z' fill='%23fffbf1'/%3E%3Cpath d='M7 7C20 11 32 15 48 21C32 24 20 28 7 33' fill='none' stroke='%232c3f78' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
 }
 .bubble.aimed::after { display: none; }   /* halen tegnes som SVG som peker mot munnen */
-.bubble .tail { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 1; }
+.bubble .tail { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 0; }
+.bubble > span, .bubble > small, .bubble > img { position: relative; z-index: 2; }   /* teksten over halen */
 .bubble.pop { animation: pop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes pop { 0% { transform: scale(0.92); } 100% { transform: scale(1); } }
 
@@ -297,6 +301,7 @@ h1 {
   .top.top.week { grid-template-areas: "wbub pres" !important; grid-template-columns: 360px 488px !important; gap: 28px; align-items: center; }
   .top.week .bubble-wrap { grid-area: wbub; align-self: center; justify-self: stretch; width: auto; margin: 0; height: auto; transform: none; }
   .top.week .presenter { transform: none; }
+  .top.week .presenter .p-board { top: 34px; }   /* PC: tavla under søkefeltet */
 }
 
 /* ---------- responsive ---------- */
@@ -341,7 +346,7 @@ h1 {
   .bubble { font-size: 1.05rem; padding: 22px 18px; min-height: 170px; }
   .bubble small, .bubble.long small { font-size: 0.76rem; }   /* lik tekststørrelse uansett hvor mye tekst */
   .bubble.long { padding: 18px 16px; }
-  .bubble::after { right: -29px; width: 44px; height: 32px; }
+  .bubble::after { right: -34px; width: 42px; height: 32px; }
   .bubble.aimed::after { right: auto; }
   .girl { height: 335px; }
   .app { gap: 14px; }   /* mobil: kart og meteogram i samme skjermbilde */
@@ -836,7 +841,13 @@ function periodFor(h, p) {
   const s = windowSummary(win, h);
   // regn kl 22–06 teller ikke for dag og kveld (da sover man) – bare for nattboblen
   const rw = p === 0 ? win : win.filter(x => x.t.getHours() >= 6 && x.t.getHours() < 22);
-  const wet = rw.filter(x => WET_TYPES.includes(x.type));
+  let wet = rw.filter(x => WET_TYPES.includes(x.type));
+  // bare en dråpe (maks 1 time og 0,2 mm til sammen): regnes som opphold, klær etter følt temperatur
+  if (wet.length <= 1 && wet.reduce((a, x) => a + x.precip, 0) <= 0.2) wet = [];
+  // litt regn/sludd nå som gir seg snart (bare de første 2 timene, maks 1 mm): klær etter temperaturen
+  let briefNow = false;
+  if (p !== 0 && wet.length && rw.length > 3 && sameDay(h.t, now) && wet.reduce((a, x) => a + x.precip, 0) <= 1 &&
+      wet.every(x => +x.t - +rw[0].t < 2 * 3600e3)) { briefNow = wet.some(x => x.type === "sleet") ? "sludd" : "regn"; wet = []; }
   const allWet = rw.length >= 3 && wet.length === rw.length;
   let key = s.key;
   if (allWet) key = "n10";   // regn hele perioden: blått regnsett
@@ -885,11 +896,12 @@ function periodFor(h, p) {
   if (p === 3) {
     const cold = x => x.type === "sleet" || x.type === "snow", wetX = x => WET_TYPES.includes(x.type) || x.type === "snow";
     const k = win.findIndex(cold);
-    if (k >= 1 && !cold(win[0])) later = "Senere kan det bli sludd eller snø.";                 // regn først, så sludd/snø
+    if (k >= 2 && !cold(win[0])) later = "Senere kan det bli sludd eller snø.";                 // regn først, så sludd/snø
     else if (!wetX(win[0]) && !(win[1] && wetX(win[1])) && win.slice(2).some(wetX)) later = "Senere kan det komme regn.";
     else if (wetX(win[0]) && win.length > 4 && win.slice(-3).every(x => !wetX(x))) later = "Senere blir det opphold.";
   }
-  if (later === "Senere kan det komme regn." && (key === "n10" || key === "n01p")) later = "";   // regnklær er allerede valgt
+  if (later === "Senere kan det komme regn." && (key === "n10" || key === "n01p")) later = "";
+  if (briefNow) later = `Det er litt ${briefNow} nå, men det gir seg snart.`;   // regnklær er allerede valgt
   // sporadisk regn, under 0,5 mm til sammen: paraply, eller regntøy hvis man skal være ute lenge
   const sprinkle = key === "n01p" && !allWet && wet.reduce((a, x) => a + x.precip, 0) < 0.5;
   if (sprinkle) key = "n10";   // vis regntøy-figuren
@@ -965,7 +977,7 @@ function fitBubble() {
   const b = $("#bubble"); if (!b || !b.children.length) return;
   const oldTail = b.querySelector("svg.tail"); if (oldTail) oldTail.remove();   // halen tegnes på nytt etterpå
   b.style.top = b.style.bottom = "";   // glem plasseringen fra forrige visning før boblen måles
-  b.style.paddingTop = b.style.paddingBottom = b.style.paddingLeft = b.style.paddingRight = b.style.fontSize = b.style.minHeight = "";
+  b.style.paddingTop = b.style.paddingBottom = b.style.paddingLeft = b.style.paddingRight = b.style.fontSize = b.style.minHeight = b.style.maxWidth = "";
   // mobil: få ord = større skrift og større boble, så den fyller plassen
   if (matchMedia("(max-width: 560px)").matches) {
     const n = b.textContent.trim().length;
@@ -973,6 +985,14 @@ function fitBubble() {
   }
   // boblen følger teksten (ikke fast minstehøyde), så det ikke blir mye luft over teksten
   b.style.minHeight = "0px";
+  // samme runde form som i «Været fremover» (bredde/høyde ca. 1,35): gjør boblen smalere til teksten bryter om
+  b.style.maxWidth = "";
+  for (let k = 0; k < 30; k++) {
+    const r = b.getBoundingClientRect();
+    if (r.width / r.height <= 1.4 || r.width < 150) break;
+    b.style.maxWidth = (r.width - 10) + "px";
+  }
+  { const r = b.getBoundingClientRect(); if (r.width / r.height > 1.4) b.style.minHeight = Math.round(r.width / 1.4) + "px"; }
   // «Jeg har sjekket radaren:» skal stå på én linje øverst: krymp bare den linjen hvis den ikke får plass
   const lead = b.querySelector(".lead1");
   if (lead) {
@@ -996,7 +1016,7 @@ function fitBubble() {
       }
     return [worst, wx];
   };
-  const LIMIT = matchMedia("(max-width: 560px)").matches ? 1.2 : 1.16;   // litt slingringsmonn: hjørnene av tekstlinjene kan gå litt ut mot kanten
+  const LIMIT = matchMedia("(max-width: 560px)").matches ? 1.3 : 1.16;   // litt slingringsmonn: hjørnene av tekstlinjene kan gå litt ut mot kanten
   for (let k = 0; k < 40; k++) {
     const [worst, wx] = worstOut();
     if (worst <= LIMIT) break;
@@ -1038,32 +1058,9 @@ function aimBubble() {
       else b.style.top = delta + "px";
     }
   }
-  // munnen: ca. midt på bildet, 31 % ned fra toppen
-  const pres = $("#presenter");
-  const fig = long ? (pres && pres.classList.contains("dressed") ? $("#pFig") : pres && pres.querySelector(".p-dame")) : $("#girl img");
-  if (!fig || !fig.offsetWidth) { b.classList.remove("aimed"); return; }
-  const fr = fig.getBoundingClientRect(), br = b.getBoundingClientRect();
-  const mx = fr.left + fr.width * 0.5, my = fr.top + fr.height * 0.31;
-  const cx = br.left + br.width / 2, cy = br.top + br.height / 2, a = br.width / 2, bb = br.height / 2;
-  const dx = mx - cx, dy = my - cy, k = 1 / Math.sqrt((dx / a) ** 2 + (dy / bb) ** 2);
-  // halen: to punkter på kanten av ovalen (så foten følger kanten) og en spiss ut mot munnen
-  const ang = Math.atan2(dy / bb, dx / a), d = mobile ? 0.17 : 0.13, L = mobile ? 30 : 40;
-  const P = (t, sc) => [a + Math.cos(t) * a * sc, bb + Math.sin(t) * bb * sc];
-  const [x1, y1] = P(ang - d, 0.985), [x2, y2] = P(ang + d, 0.985), [xi1, yi1] = P(ang - d, 0.9), [xi2, yi2] = P(ang + d, 0.9);
-  const len = Math.hypot(dx, dy) || 1, ex = a + dx * k, ey = bb + dy * k;
-  const tx = ex + dx / len * L, ty = ey + dy / len * L;
-  // spissen bøyes litt, som en tegneserieboble
-  const c1x = (x1 + tx) / 2 + (dy / len) * 4, c1y = (y1 + ty) / 2 - (dx / len) * 4, c2x = (x2 + tx) / 2 + (dy / len) * 4, c2y = (y2 + ty) / 2 - (dx / len) * 4;
-  const f = n => n.toFixed(1);
-  let svg = b.querySelector("svg.tail");
-  if (!svg) { svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("class", "tail"); svg.setAttribute("aria-hidden", "true"); }
-  svg.setAttribute("width", br.width); svg.setAttribute("height", br.height);
-  const bw = parseFloat(getComputedStyle(b).borderLeftWidth) || 2.5;
-  svg.style.left = svg.style.top = (-bw) + "px";
-  svg.innerHTML = `<path d="M${f(xi1)} ${f(yi1)}L${f(x1)} ${f(y1)}Q${f(c1x)} ${f(c1y)} ${f(tx)} ${f(ty)}Q${f(c2x)} ${f(c2y)} ${f(x2)} ${f(y2)}L${f(xi2)} ${f(yi2)}Z" fill="#fffbf1"/>` +
-    `<path d="M${f(x1)} ${f(y1)}Q${f(c1x)} ${f(c1y)} ${f(tx)} ${f(ty)}Q${f(c2x)} ${f(c2y)} ${f(x2)} ${f(y2)}" fill="none" stroke="#2c3f78" stroke-width="${bw}" stroke-linejoin="round" stroke-linecap="round"/>`;
-  if (svg.parentNode !== b) b.appendChild(svg);
-  b.classList.add("aimed");
+  // halen er fast (CSS ::after): på høyre ende av boblen, pekende mot jenta – lik overalt
+  const old = b.querySelector("svg.tail"); if (old) old.remove();
+  b.classList.remove("aimed");
 }
 function resetBubbleSlot() { const w = $("#bubble").parentElement; w._h = 0; w.style.height = ""; }
 function placeGirl() {
@@ -1186,6 +1183,7 @@ async function load(city) {
   // nytt sted: glem det jenta sa om radaren for forrige sted
   $("#bubble").classList.remove("talk");
   state.dayTalk = false;
+  updateGirlTap();
   resetBubbleSlot();
   if (typeof stopRadar === "function") { stopRadar(); state.rMin = 0; $("#rLabel").textContent = "Nå"; }
   state.nc = null;
@@ -1290,7 +1288,11 @@ function renderChart() {
   const m = { l: small ? 34 : 62, r: small ? 26 : 50, t: small ? 22 : 28, b: small ? 42 : 58 };
   const pw = W - m.l - m.r, ph = H - m.t - m.b;
   const hrs = series(), n = hrs.length, long = state.view === "long";
-  const x = i => m.l + i / (n - 1) * pw;
+  // x etter tid (ikke etter nummer på punktet), så punktene, søylene og dagene står på samme sted.
+  // I 7-dagersvisningen er punktene ikke like tett (første er «nå», siste er 23:59).
+  const T0 = +hrs[0].t, T1 = +hrs[n - 1].t;
+  const xi = i => m.l + (T1 > T0 ? (+hrs[i].t - T0) / (T1 - T0) : i / (n - 1)) * pw;
+  const x = i => { const lo = Math.floor(i), hi = Math.min(n - 1, Math.ceil(i)); return lo === hi ? xi(lo) : xi(lo) + (i - lo) * (xi(hi) - xi(lo)); };
   const temps = hrs.map(h => h.temp);
   const lo = Math.min(...temps), hi = Math.max(...temps);
   let step = 5, tMin;
@@ -1502,7 +1504,7 @@ function renderSel() {
   // snø i cm (1 mm nedbør ≈ 1 cm snø), regn i mm
   const amt = h.precip > 0 ? (h.type === "snow" ? `${String(Math.round(h.precip * 10) / 10).replace(".", ",")} cm` : `${String(h.precip).replace(".", ",")} mm`) : "";
   $("#tipWx").textContent = WX_NAME[h.type] + (amt ? ` ${amt}` : "");
-  const gustTxt = (h.gust || 0) > 18 ? ` (kast ${Math.round(h.gust)})` : "";
+  const gustTxt = "";   // vindkast vises ikke i infoboksen
   $("#tipWind").textContent = (h.wind || 0) >= 1 ? `Vind ${Math.round(h.wind)} m/s${gustTxt}` : "";
   const tw = tip.offsetWidth, th = tip.offsetHeight;
   const left = clamp(px - tw / 2, 0, W - tw);
@@ -1544,7 +1546,7 @@ function renderSel() {
     else if (P.rainLevel === 2) lines.push(`Det regner mye ${rw}!`);
     else if (P.rainLevel === 1) lines.push(`Det regner endel ${rw}.`);
     if (hx.type === "thunder") lines.push("Det tordner, så hold deg gjerne inne!");
-    if (P.windLevel === 3) { lines.push(`Det blåser veldig mye ${pw}! Fint å være inne og drikke kakao og se film.`); cocoaA = true; }
+    if (P.windLevel === 3) { lines.push(`Det blåser veldig mye ${pw}!`); cocoaA = true; }
     else if (P.windLevel === 2) lines.push(`Det blåser mye ${pw}!`);
     else if (P.windLevel === 1) lines.push(`Det blåser endel ${pw}.`);
     extra = lines.join(" ");
@@ -1640,12 +1642,15 @@ function renderSel() {
     main = P.p === 3 ? (P.dryAfter ? main + " Senere blir det opphold!" : main)   // resten av dagen: bare «senere blir det opphold»
                      : main.replace(/!$/, `, for det regner ${P.rainWhen}.`) + (P.dryAfter ? " Etterpå blir det opphold!" : "");
   }
+  // «… Det er lurt med» / «regntøy.» – klærne på linjen under
+  if (!long) main = main.replace("Det er lurt med <b>", "Det er lurt med<br><b>");
+  else main = main.replace("den tykkeste vinterjakka, skjerf og votter", "den tykkeste vinterjakka,<br>skjerf og votter");   // penere linjeskift i boblen   // bare i «I dag og i morgen»
   // dagen øverst i boblen på egen linje, så fortsetter setningen («I dag» / «bør du ha …»)
   const dm = main.match(/^(Resten av dagen|Neste natt|I dag og i morgen|I dag|I morgen kveld|I morgen tidlig|I morgen|I natt|I kveld|Akkurat nå|På \S+) /);
   if (dm) main = `<em class="bday">${dm[1]}</em>${main.slice(dm[0].length)}`;
   // mobil: «Det regner og» / «blåser mye!» på hver sin linje
   extra = extra.replace(/(Det (?:tordner, )?regner og) (blåser mye!)/, '$1<br class="mbr"> $2');
-  let html = `<span>${main}</span>` + (extra ? `<small>${extra}</small>` : "") + (state.cocoa ? `<small class="cocoa">Best med kakao og film inne!</small><img class="cocoa-img" src="${COCOA_IMG}" alt="Kopp med varm kakao">` : "");
+  let html = `<span>${main}</span>` + (extra ? `<small>${extra}</small>` : "");   // (kakao/«Fint med innetid!» er tatt bort)
   // «Været fremover»: som standard et sammendrag av uka; dagens råd kommer når man trykker på jenta
   if (long && !state.dayTalk) { html = weekSummaryHtml(); main = ""; extra = ""; }
   // «Været fremover»: etter trykk vises jenta i klærne for dagen i stedet for værdama
@@ -1778,6 +1783,7 @@ function girlTalk() {
     return;
   }
   let html;
+  if (!inNowcast(state.city)) return;   // utenfor radaren: ingenting skjer når man trykker
   if (!state.nc) html = state.ncFailed && !inNowcast(state.city) ? `<span>Jeg kan ikke se om det regner utenfor Norge.</span>`
     : state.ncFailed ? `<span>Jeg får ikke sjekket radaren akkurat nå. Prøv igjen litt senere!</span>` : `<span>Jeg sjekker radaren, trykk på meg igjen om litt!</span>`;
   else {
@@ -1800,6 +1806,8 @@ function girlTalk() {
   // teksten blir stående til man trykker på jenta igjen (eller drar i meteogrammet)
 }
 $("#girl").addEventListener("click", girlTalk);
+// utenfor radaren: jenta er ikke trykkbar (ingen «trykk på meg»-hånd)
+function updateGirlTap() { const g = $("#girl"), ok = !state.city || inNowcast(state.city); g.style.cursor = ok ? "" : "default"; g.title = ok ? "Trykk på meg!" : ""; }
 // «Været fremover»: trykk på værdama = råd for dagen du står på; trykk igjen = sammendraget av uka
 // jenta i klær står på kanten av meteogrammet, som i dag-visningen
 function placeFig() {
@@ -2324,9 +2332,11 @@ function loop(t) {
 const chartEl = $("#chart");
 let dragging = false;
 function idxFromEvent(e) {
-  const rect = chartEl.getBoundingClientRect();
-  const { m, pw, n } = geo;
-  return clamp(Math.round((e.clientX - rect.left - m.l) / pw * (n - 1)), 0, n - 1);
+  // nærmeste punkt der man trykker (punktene står etter tid)
+  const rect = chartEl.getBoundingClientRect(), px = e.clientX - rect.left, { x, n } = geo;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < n; i++) { const d = Math.abs(x(i) - px); if (d < bd) { bd = d; best = i; } }
+  return best;
 }
 function setSel(i) { if (i !== state.sel) { state.sel = i; state.selMoved = true; renderSel(); } }
 chartEl.addEventListener("pointerdown", e => {
@@ -2365,7 +2375,7 @@ $("#favBtn").addEventListener("click", () => {
   const c = state.city;
   try {
     if (isFav(c)) localStorage.removeItem("vaer-favoritt");
-    else localStorage.setItem("vaer-favoritt", JSON.stringify({ name: c.name, lat: c.lat, lon: c.lon, coast: c.coast, region: c.region, tz: c.tz }));
+    else localStorage.setItem("vaer-favoritt", JSON.stringify({ name: c.name, lat: c.lat, lon: c.lon, coast: c.coast, region: c.region, tz: c.tz, cc: c.cc }));
   } catch {}
   updateFav();
   const b = $("#favBtn"); if (!reduceMotion) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
@@ -2421,7 +2431,7 @@ function searchWorld(text, n = 6) {
   const W = worldData(), out = [];
   for (const c of W) { if (c.key.startsWith(t)) { out.push(c); if (out.length >= n) break; } }   // lista er sortert etter folketall
   if (out.length < n) for (const c of W) { if (!c.key.startsWith(t) && c.key.includes(" " + t)) { out.push(c); if (out.length >= n) break; } }
-  return out.map(c => ({ name: c.name, lat: c.lat, lon: c.lon, tz: c.tz, region: [c.adm, c.country].filter(Boolean).join(", "), pop: c.pop }));
+  return out.map(c => ({ name: c.name, lat: c.lat, lon: c.lon, tz: c.tz, cc: c.cc, region: [c.adm, c.country].filter(Boolean).join(", "), pop: c.pop }));
 }
 const KV_RANK = { "By": 0, "Tettsted": 1, "Kommune": 2, "Bydel": 3, "Tettbebyggelse": 4, "Grend": 5, "Øy": 6, "Fjell": 7 };
 async function searchNorway(text) {
@@ -2431,7 +2441,7 @@ async function searchNorway(text) {
     if (!r.ok) throw new Error("kartverket " + r.status);
     const j = await r.json(), seen = new Set(), t = deaccent(text);
     return (j.navn || []).filter(n => n.representasjonspunkt)
-      .map(n => ({ name: n.skrivemåte, lat: n.representasjonspunkt.nord, lon: n.representasjonspunkt.øst, tz: "Europe/Oslo", type: n.navneobjekttype,
+      .map(n => ({ name: n.skrivemåte, lat: n.representasjonspunkt.nord, lon: n.representasjonspunkt.øst, tz: "Europe/Oslo", cc: "NO", type: n.navneobjekttype,
         // bare det norske navnet (før « - »), og ikke kommunenavnet hvis det er det samme som stedet
         region: [(n.kommuner || [])[0]?.kommunenavn, (n.fylker || [])[0]?.fylkesnavn].filter(Boolean).map(v => { const parts = v.split(" - "); return parts.find(x => n.skrivemåte.startsWith(x)) || parts.find(x => !/[áčđŋšŧžÁČĐŊŠŦŽ]/.test(x)) || parts[0]; })
           .filter((v, k, a) => a.indexOf(v) === k && v !== n.skrivemåte).join(", ") }))
@@ -2499,7 +2509,7 @@ $("#viewBtn").addEventListener("click", () => {
   state.view = state.view === "long" ? "day" : "long";
   state.sel = 0; state.selMoved = true; state.dayTalk = false; resetBubbleSlot();
   setViewButton(); renderChart();
-  requestAnimationFrame(() => { fitBubble(); });   // mål boblen på nytt i den nye visningen
+  requestAnimationFrame(() => { placeGirl(); fitBubble(); });   // mål jenta og boblen på nytt i den nye visningen
 });
 $("#retry").addEventListener("click", () => { state.netOk = true; state.ncOk = true; load(state.city); });
 
